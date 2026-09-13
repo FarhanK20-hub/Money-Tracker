@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Money Tracker 💸
 
-## Getting Started
+A beautiful, mobile-first web application for independently tracking Personal and Business finances. Designed to be completely free to host and operate, with a strict single-user architecture and a seamless iOS Shortcuts integration for automated transaction logging.
 
-First, run the development server:
+## Features ✨
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Dual-System Architecture:** Completely separate tracking for Personal and Business finances.
+- **Fixed Deposits Manager:** Log business funds into Fixed Deposits and track interest earned. 
+- **Real-Time Data Sync:** Built with Firebase Firestore's `onSnapshot` global data provider for instant, zero-loading page transitions.
+- **Automated iOS Logging API:** Secure Webhook API designed to receive transaction payloads directly from iOS Shortcuts or banking SMS triggers.
+- **Review Queue:** Automatically catches unverified income (e.g. unknown senders via the API) and places them in a dedicated review queue for manual classification.
+- **PWA Ready:** Installable as an app on iOS/Android home screens for a native feel.
+- **Single-User Lock:** Hardcoded email verification blocks all other accounts from logging in.
+
+## Tech Stack 🛠️
+
+- **Frontend:** Next.js (App Router), React, TypeScript, Tailwind CSS v4
+- **Backend/Database:** Firebase (Firestore, Authentication)
+- **Hosting Target:** Vercel (Hobby Tier)
+- **API:** Next.js API Routes + Firebase Admin SDK
+
+## Local Development 💻
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/FarhanK20-hub/Money-Tracker.git
+   cd Money-Tracker
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Set up Firebase Environment Variables:**
+   Rename `.env.local.example` to `.env.local` and fill in your Firebase configuration keys and Admin SDK credentials.
+
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open the app:**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## iOS Shortcut Webhook API 📱
+
+The app includes a secure POST endpoint at `/api/transactions` designed for Apple Shortcuts.
+
+**Headers required:**
+- `Authorization: Bearer <API_SECRET_KEY>`
+
+**JSON Payload Example:**
+```json
+{
+  "amount": 450,
+  "direction": "debit",
+  "rawSender": "Zomato UPI",
+  "notes": "Lunch"
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The API automatically parses the direction and sender:
+- `debit` goes to `personal_expense`.
+- `credit` matching `MOM_ACCOUNT_IDENTIFIERS` goes to `personal_income`.
+- `credit` from an unknown source is flagged as `unverified_income` for the Review Queue.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+MIT License. Created for personal use.
