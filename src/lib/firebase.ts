@@ -34,7 +34,19 @@ export function getFirebaseAuth(): Auth {
 }
 
 export function getFirebaseDb(): Firestore {
-  if (!_db) _db = getFirestore(getFirebaseApp());
+  if (!_db) {
+    if (process.env.NODE_ENV === 'production' && typeof window !== 'undefined') {
+      try {
+        _db = initializeFirestore(getFirebaseApp(), {
+          localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
+        });
+      } catch (e) {
+        _db = getFirestore(getFirebaseApp());
+      }
+    } else {
+      _db = getFirestore(getFirebaseApp());
+    }
+  }
   return _db;
 }
 
