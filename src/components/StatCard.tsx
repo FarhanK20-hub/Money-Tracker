@@ -6,7 +6,7 @@ interface StatCardProps {
   label: string;
   amount: number;
   variant: 'personal' | 'business' | 'neutral' | 'pending';
-  size?: 'default' | 'hero';
+  size?: 'default' | 'hero' | 'compact';
   prefix?: string;
   className?: string;
 }
@@ -62,7 +62,9 @@ export default function StatCard({
       </p>
       <p
         className={`tabular-nums font-bold ${s.amount} ${
-          size === 'hero' ? 'text-3xl sm:text-4xl' : 'text-xl sm:text-2xl'
+          size === 'hero' ? 'text-3xl sm:text-4xl'
+          : size === 'compact' ? 'text-base sm:text-lg'
+          : 'text-xl sm:text-2xl'
         } leading-tight`}
       >
         {formatCurrency(amount)}

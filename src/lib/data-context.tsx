@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Transaction, FixedDeposit } from '@/lib/constants';
-import { getTransactions, getFixedDeposits, DashboardData, notifyDataChanged } from '@/lib/firestore';
+import { getTransactions, getFixedDeposits, DashboardData, notifyDataChanged, autoProcessMaturedFDs } from '@/lib/firestore';
 import { syncFromGist } from '@/lib/gist-sync';
 import { useAuth } from '@/lib/auth-context';
 
@@ -47,6 +47,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setLoadingTx(true);
       setLoadingFds(true);
       try {
+        await autoProcessMaturedFDs();
         const [txs, fdsData] = await Promise.all([
           getTransactions('all'),
           getFixedDeposits()
@@ -62,25 +63,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // 1. Load from localStorage immediately (instant)
-    loadData();
-
-    // 2. Pull from Gist in background — if new data found, reload
-    setIsSyncing(true);
-    syncFromGist()
-      .then((changed) => {
-        if (changed) {
-          notifyDataChanged();
-        }
-      })
-      .catch(() => {})
-      .finally(() => setIsSyncing(false));
-
     const handleLocalDataChange = () => {
       loadData();
     };
 
+    // Register listener BEFORE syncing to avoid race conditions
     window.addEventListener('local-data-changed', handleLocalDataChange);
+
+    // 1. Load from localStorage immediately (instant)
+    loadData();
+
+    // 2. Pull from Gist in background — if new data found, reload directly
+    setIsSyncing(true);
+    syncFromGist()
+      .then((changed) => {
+        if (changed) {
+          // Reload directly instead of relying solely on the event
+          loadData();
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsSyncing(false));
 
     return () => {
       window.removeEventListener('local-data-changed', handleLocalDataChange);
@@ -109,14 +112,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     const personalBalance = personalIncome - personalExpenses;
-    const businessProfit = businessIncome - businessExpenses;
 
     const totalFDPrincipal = fds
       .filter((fd) => fd.status === 'active')
       .reduce((sum, fd) => sum + fd.principal, 0);
 
-    const availableBalance = businessProfit - totalFDPrincipal;
-    const totalBusinessMoney = businessProfit;
+    // Profit = total business wealth (income + locked FDs - expenses)
+    const businessProfit = businessIncome + totalFDPrincipal - businessExpenses;
+    // Available = liquid cash only (income - expenses, no FDs)
+    const availableBalance = businessIncome - businessExpenses;
 
     dashboardData = {
       personalIncome,
@@ -127,7 +131,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       businessProfit,
       totalFDPrincipal,
       availableBalance,
-      totalBusinessMoney,
       unverifiedCount,
     };
   }

@@ -101,7 +101,6 @@ export interface DashboardData {
   businessProfit: number;
   totalFDPrincipal: number;
   availableBalance: number;
-  totalBusinessMoney: number;
   unverifiedCount: number;
 }
 
@@ -138,15 +137,16 @@ export async function getDashboardData(): Promise<DashboardData> {
   }
 
   const personalBalance = personalIncome - personalExpenses;
-  const businessProfit = businessIncome - businessExpenses;
 
   // Calculate total FD principal from active FDs
   const totalFDPrincipal = fds
     .filter((fd) => fd.status === 'active')
     .reduce((sum, fd) => sum + fd.principal, 0);
 
-  const availableBalance = businessProfit - totalFDPrincipal;
-  const totalBusinessMoney = businessProfit;
+  // Profit = total business wealth (income + locked FDs - expenses)
+  const businessProfit = businessIncome + totalFDPrincipal - businessExpenses;
+  // Available = liquid cash only (income - expenses)
+  const availableBalance = businessIncome - businessExpenses;
 
   return {
     personalIncome,
@@ -157,7 +157,6 @@ export async function getDashboardData(): Promise<DashboardData> {
     businessProfit,
     totalFDPrincipal,
     availableBalance,
-    totalBusinessMoney,
     unverifiedCount,
   };
 }
@@ -193,6 +192,46 @@ export async function updateFixedDepositStatus(id: string, status: 'active' | 'm
   if (index !== -1) {
     fds[index].status = status;
     setLocalData(COLLECTIONS.FIXED_DEPOSITS, fds);
+  }
+}
+
+export async function autoProcessMaturedFDs() {
+  const fds = getLocalData<FixedDeposit>(COLLECTIONS.FIXED_DEPOSITS);
+  let hasChanges = false;
+  const now = new Date();
+
+  for (const fd of fds) {
+    if (fd.status === 'active' && new Date(fd.maturityDate) <= now) {
+      fd.status = 'matured';
+      hasChanges = true;
+
+      // Calculate maturity amount
+      const tenureYears = (new Date(fd.maturityDate).getTime() - new Date(fd.startDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+      const calculated = fd.principal * Math.pow(1 + fd.interestRate / (4 * 100), 4 * tenureYears);
+      const maturityAmount = fd.maturityAmount ?? calculated;
+      const interestEarned = maturityAmount - fd.principal;
+
+      // Add transaction for the maturity payout
+      const txs = getLocalData<Transaction>(COLLECTIONS.TRANSACTIONS);
+      txs.push({
+        id: generateId(),
+        amount: maturityAmount,
+        direction: 'credit',
+        category: 'business_income',
+        rawSender: `${fd.bankName} FD Maturity`,
+        notes: `FD Matured. Principal: ${fd.principal}, Interest: ${Math.round(interestEarned)}`,
+        source: 'manual',
+        timestamp: new Date(fd.maturityDate),
+        createdAt: new Date(),
+      });
+      localStorage.setItem(COLLECTIONS.TRANSACTIONS, JSON.stringify(txs));
+    }
+  }
+
+  if (hasChanges) {
+    localStorage.setItem(COLLECTIONS.FIXED_DEPOSITS, JSON.stringify(fds));
+    notifyDataChanged();
+    syncToGist().catch(() => {});
   }
 }
 

@@ -35,6 +35,7 @@ export interface FixedDeposit {
   interestRate: number;
   startDate: Date;
   maturityDate: Date;
+  maturityAmount?: number; // actual bank-confirmed value (overrides calculated)
   status: FDStatus;
   notes: string;
   createdAt: Date;

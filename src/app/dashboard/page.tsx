@@ -136,10 +136,9 @@ function DashboardContent() {
               <StatCard label="Income" amount={data.businessIncome} variant="business" />
               <StatCard label="Expenses" amount={data.businessExpenses} variant="business" />
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <StatCard label="Available" amount={data.availableBalance} variant="business" />
-              <StatCard label="Fixed Dep." amount={data.totalFDPrincipal} variant="business" />
-              <StatCard label="Total" amount={data.totalBusinessMoney} variant="business" />
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard label="Available" amount={data.availableBalance} variant="business" size="compact" />
+              <StatCard label="Fixed Dep." amount={data.totalFDPrincipal} variant="business" size="compact" />
             </div>
           </div>
         </section>

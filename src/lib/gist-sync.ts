@@ -6,10 +6,13 @@
  * - On app open, syncFromGist() pulls remote data and merges with local
  */
 
-const GIST_TOKEN = process.env.NEXT_PUBLIC_GIST_TOKEN || '';
-const GIST_ID = process.env.NEXT_PUBLIC_GIST_ID || '';
 const GIST_FILENAME = 'money-tracker-data.json';
-const GIST_API = `https://api.github.com/gists/${GIST_ID}`;
+
+function getGistConfig() {
+  const token = process.env.NEXT_PUBLIC_GIST_TOKEN || '';
+  const id = process.env.NEXT_PUBLIC_GIST_ID || '';
+  return { token, id, api: `https://api.github.com/gists/${id}` };
+}
 
 const DATE_KEYS = new Set([
   'timestamp', 'createdAt', 'reviewedAt', 'startDate', 'maturityDate',
@@ -81,7 +84,8 @@ function mergeById<T extends { id: string; createdAt: unknown }>(
 }
 
 export async function syncToGist(): Promise<void> {
-  if (!GIST_TOKEN || !GIST_ID) return;
+  const { token, id, api } = getGistConfig();
+  if (!token || !id) return;
   try {
     const payload: GistPayload = {
       transactions: readLocalRaw('transactions'),
@@ -89,10 +93,10 @@ export async function syncToGist(): Promise<void> {
       fdTransactions: readLocalRaw('fdTransactions'),
       lastUpdated: new Date().toISOString(),
     };
-    await fetch(GIST_API, {
+    await fetch(api, {
       method: 'PATCH',
       headers: {
-        Authorization: `token ${GIST_TOKEN}`,
+        Authorization: `token ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -107,12 +111,12 @@ export async function syncToGist(): Promise<void> {
 }
 
 export async function syncFromGist(): Promise<boolean> {
-  if (!GIST_TOKEN || !GIST_ID) return false;
+  const { token, id, api } = getGistConfig();
+  if (!token || !id) return false;
   try {
-    const res = await fetch(GIST_API, {
+    const res = await fetch(api, {
       headers: {
-        Authorization: `token ${GIST_TOKEN}`,
-        'Cache-Control': 'no-cache',
+        Authorization: `token ${token}`,
       },
     });
     if (!res.ok) return false;
