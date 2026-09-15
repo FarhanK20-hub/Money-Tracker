@@ -1,103 +1,93 @@
-import { collection, query, where, getDocs, orderBy, Timestamp, doc, updateDoc, addDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import { getFirebaseDb } from '@/lib/firebase';
 import { COLLECTIONS, Transaction, FixedDeposit, FDTransaction, TransactionCategory } from '@/lib/constants';
+import { syncToGist } from '@/lib/gist-sync';
 
-// ─── Firestore ↔ App converters ─────────────────────────────────────
-
-function toDate(val: unknown): Date {
-  if (val instanceof Timestamp) return val.toDate();
-  if (val instanceof Date) return val;
-  if (typeof val === 'string') return new Date(val);
-  return new Date();
+// A simple utility to trigger updates
+export function notifyDataChanged() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('local-data-changed'));
+  }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function docToTransaction(id: string, data: any): Transaction {
-  return {
-    id,
-    amount: data.amount ?? 0,
-    direction: data.direction ?? 'credit',
-    category: data.category ?? 'unverified_income',
-    rawSender: data.rawSender ?? '',
-    notes: data.notes ?? '',
-    source: data.source ?? 'manual',
-    timestamp: toDate(data.timestamp),
-    createdAt: toDate(data.createdAt),
-    reviewedAt: data.reviewedAt ? toDate(data.reviewedAt) : undefined,
-  };
+function getLocalData<T>(key: string): T[] {
+  if (typeof window === 'undefined') return [];
+  const data = localStorage.getItem(key);
+  if (!data) return [];
+  
+  return JSON.parse(data, (k, v) => {
+    if (['timestamp', 'createdAt', 'reviewedAt', 'startDate', 'maturityDate'].includes(k) && typeof v === 'string') {
+      return new Date(v);
+    }
+    return v;
+  });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function docToFD(id: string, data: any): FixedDeposit {
-  return {
-    id,
-    bankName: data.bankName ?? '',
-    principal: data.principal ?? 0,
-    interestRate: data.interestRate ?? 0,
-    startDate: toDate(data.startDate),
-    maturityDate: toDate(data.maturityDate),
-    status: data.status ?? 'active',
-    notes: data.notes ?? '',
-    createdAt: toDate(data.createdAt),
-  };
+function setLocalData<T>(key: string, data: T[]) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(key, JSON.stringify(data));
+    notifyDataChanged();
+    // Background sync — fire and forget, never blocks the UI
+    syncToGist().catch(() => {});
+  }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function docToFDTransaction(id: string, data: any): FDTransaction {
-  return {
-    id,
-    fdId: data.fdId ?? '',
-    type: data.type ?? 'deposit',
-    amount: data.amount ?? 0,
-    timestamp: toDate(data.timestamp),
-    notes: data.notes ?? '',
-    createdAt: toDate(data.createdAt),
-  };
+function generateId() {
+  return Math.random().toString(36).substring(2, 11);
 }
 
 // ─── Transactions ────────────────────────────────────────────────────
 
 export async function getTransactions(categoryFilter?: TransactionCategory | 'all'): Promise<Transaction[]> {
-  const colRef = collection(getFirebaseDb(), COLLECTIONS.TRANSACTIONS);
-  let q;
+  let txs = getLocalData<Transaction>(COLLECTIONS.TRANSACTIONS);
   if (categoryFilter && categoryFilter !== 'all') {
-    q = query(colRef, where('category', '==', categoryFilter), orderBy('timestamp', 'desc'));
-  } else {
-    q = query(colRef, orderBy('timestamp', 'desc'));
+    txs = txs.filter(tx => tx.category === categoryFilter);
   }
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => docToTransaction(d.id, d.data()));
+  // Sort descending by timestamp
+  return txs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
 
 export async function getUnverifiedTransactions(): Promise<Transaction[]> {
-  const colRef = collection(getFirebaseDb(), COLLECTIONS.TRANSACTIONS);
-  const q = query(colRef, where('category', '==', 'unverified_income'), orderBy('timestamp', 'desc'));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => docToTransaction(d.id, d.data()));
+  const txs = getLocalData<Transaction>(COLLECTIONS.TRANSACTIONS);
+  return txs
+    .filter(tx => tx.category === 'unverified_income')
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
 
 export async function classifyTransaction(id: string, category: 'personal_income' | 'business_income') {
-  const docRef = doc(getFirebaseDb(), COLLECTIONS.TRANSACTIONS, id);
-  await updateDoc(docRef, {
-    category,
-    reviewedAt: Timestamp.now(),
-  });
+  const txs = getLocalData<Transaction>(COLLECTIONS.TRANSACTIONS);
+  const index = txs.findIndex(tx => tx.id === id);
+  if (index !== -1) {
+    txs[index].category = category;
+    txs[index].reviewedAt = new Date();
+    setLocalData(COLLECTIONS.TRANSACTIONS, txs);
+  }
 }
 
 export async function addTransaction(data: Omit<Transaction, 'id' | 'createdAt'>) {
-  const colRef = collection(getFirebaseDb(), COLLECTIONS.TRANSACTIONS);
-  const docRef = await addDoc(colRef, {
+  const txs = getLocalData<Transaction>(COLLECTIONS.TRANSACTIONS);
+  const id = generateId();
+  const newTx: Transaction = {
     ...data,
-    timestamp: Timestamp.fromDate(data.timestamp),
-    createdAt: Timestamp.now(),
-    reviewedAt: data.reviewedAt ? Timestamp.fromDate(data.reviewedAt) : null,
-  });
-  return docRef.id;
+    id,
+    createdAt: new Date(),
+  };
+  txs.push(newTx);
+  setLocalData(COLLECTIONS.TRANSACTIONS, txs);
+  return id;
 }
 
 export async function deleteTransaction(id: string) {
-  const docRef = doc(getFirebaseDb(), COLLECTIONS.TRANSACTIONS, id);
-  await deleteDoc(docRef);
+  let txs = getLocalData<Transaction>(COLLECTIONS.TRANSACTIONS);
+  txs = txs.filter(tx => tx.id !== id);
+  setLocalData(COLLECTIONS.TRANSACTIONS, txs);
+}
+
+export async function updateTransaction(id: string, data: Partial<Pick<Transaction, 'amount' | 'category' | 'rawSender' | 'notes' | 'timestamp'>>) {
+  const txs = getLocalData<Transaction>(COLLECTIONS.TRANSACTIONS);
+  const index = txs.findIndex(tx => tx.id === id);
+  if (index !== -1) {
+    txs[index] = { ...txs[index], ...data };
+    setLocalData(COLLECTIONS.TRANSACTIONS, txs);
+  }
 }
 
 // ─── Dashboard Aggregation ───────────────────────────────────────────
@@ -156,7 +146,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     .reduce((sum, fd) => sum + fd.principal, 0);
 
   const availableBalance = businessProfit - totalFDPrincipal;
-  const totalBusinessMoney = businessProfit; // Profit = Available + FDs
+  const totalBusinessMoney = businessProfit;
 
   return {
     personalIncome,
@@ -175,50 +165,61 @@ export async function getDashboardData(): Promise<DashboardData> {
 // ─── Fixed Deposits ──────────────────────────────────────────────────
 
 export async function getFixedDeposits(): Promise<FixedDeposit[]> {
-  const colRef = collection(getFirebaseDb(), COLLECTIONS.FIXED_DEPOSITS);
-  const q = query(colRef, orderBy('createdAt', 'desc'));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => docToFD(d.id, d.data()));
+  const fds = getLocalData<FixedDeposit>(COLLECTIONS.FIXED_DEPOSITS);
+  return fds.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function getFixedDeposit(id: string): Promise<FixedDeposit | null> {
-  const docRef = doc(getFirebaseDb(), COLLECTIONS.FIXED_DEPOSITS, id);
-  const snap = await getDoc(docRef);
-  if (!snap.exists()) return null;
-  return docToFD(snap.id, snap.data());
+  const fds = getLocalData<FixedDeposit>(COLLECTIONS.FIXED_DEPOSITS);
+  return fds.find(fd => fd.id === id) || null;
 }
 
 export async function addFixedDeposit(data: Omit<FixedDeposit, 'id' | 'createdAt'>) {
-  const colRef = collection(getFirebaseDb(), COLLECTIONS.FIXED_DEPOSITS);
-  const docRef = await addDoc(colRef, {
+  const fds = getLocalData<FixedDeposit>(COLLECTIONS.FIXED_DEPOSITS);
+  const id = generateId();
+  const newFd: FixedDeposit = {
     ...data,
-    startDate: Timestamp.fromDate(data.startDate),
-    maturityDate: Timestamp.fromDate(data.maturityDate),
-    createdAt: Timestamp.now(),
-  });
-  return docRef.id;
+    id,
+    createdAt: new Date(),
+  };
+  fds.push(newFd);
+  setLocalData(COLLECTIONS.FIXED_DEPOSITS, fds);
+  return id;
 }
 
 export async function updateFixedDepositStatus(id: string, status: 'active' | 'matured') {
-  const docRef = doc(getFirebaseDb(), COLLECTIONS.FIXED_DEPOSITS, id);
-  await updateDoc(docRef, { status });
+  const fds = getLocalData<FixedDeposit>(COLLECTIONS.FIXED_DEPOSITS);
+  const index = fds.findIndex(fd => fd.id === id);
+  if (index !== -1) {
+    fds[index].status = status;
+    setLocalData(COLLECTIONS.FIXED_DEPOSITS, fds);
+  }
+}
+
+export async function deleteFixedDeposit(id: string) {
+  let fds = getLocalData<FixedDeposit>(COLLECTIONS.FIXED_DEPOSITS);
+  fds = fds.filter(fd => fd.id !== id);
+  setLocalData(COLLECTIONS.FIXED_DEPOSITS, fds);
 }
 
 // ─── FD Transactions ─────────────────────────────────────────────────
 
 export async function getFDTransactions(fdId: string): Promise<FDTransaction[]> {
-  const colRef = collection(getFirebaseDb(), COLLECTIONS.FD_TRANSACTIONS);
-  const q = query(colRef, where('fdId', '==', fdId), orderBy('timestamp', 'desc'));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => docToFDTransaction(d.id, d.data()));
+  const txs = getLocalData<FDTransaction>(COLLECTIONS.FD_TRANSACTIONS);
+  return txs
+    .filter(tx => tx.fdId === fdId)
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
 
 export async function addFDTransaction(data: Omit<FDTransaction, 'id' | 'createdAt'>) {
-  const colRef = collection(getFirebaseDb(), COLLECTIONS.FD_TRANSACTIONS);
-  const docRef = await addDoc(colRef, {
+  const txs = getLocalData<FDTransaction>(COLLECTIONS.FD_TRANSACTIONS);
+  const id = generateId();
+  const newTx: FDTransaction = {
     ...data,
-    timestamp: Timestamp.fromDate(data.timestamp),
-    createdAt: Timestamp.now(),
-  });
-  return docRef.id;
+    id,
+    createdAt: new Date(),
+  };
+  txs.push(newTx);
+  setLocalData(COLLECTIONS.FD_TRANSACTIONS, txs);
+  return id;
 }

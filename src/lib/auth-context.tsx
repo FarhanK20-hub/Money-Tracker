@@ -7,20 +7,18 @@ import {
   useState,
   ReactNode,
 } from 'react';
-import {
-  onAuthStateChanged,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut as firebaseSignOut,
-  User,
-} from 'firebase/auth';
-import { getFirebaseAuth } from '@/lib/firebase';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  signInWithGoogle: () => Promise<void>;
+  signInWithPasscode: (passcode: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -28,76 +26,59 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   error: null,
-  signInWithGoogle: async () => {},
+  signInWithPasscode: async () => {},
   signOut: async () => {},
 });
+
+const MOCK_USER: User = { id: 'local-user', name: 'Local User', email: 'user@local.app' };
+// For a simple local app, we can just hardcode a passcode or read from env. Let's use '1234' as default.
+const VALID_PASSCODE = process.env.NEXT_PUBLIC_LOCAL_PASSCODE || '1234';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const allowedEmail = process.env.NEXT_PUBLIC_ALLOWED_USER_EMAIL || '';
-
   useEffect(() => {
-    const auth = getFirebaseAuth();
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // Enforce single-user restriction
-        if (
-          allowedEmail &&
-          firebaseUser.email?.toLowerCase() !== allowedEmail.toLowerCase()
-        ) {
-          await firebaseSignOut(auth);
-          setUser(null);
-          setError('Unauthorized account.');
-        } else {
-          setUser(firebaseUser);
-          setError(null);
-        }
+    // Check local storage for existing session
+    const checkSession = () => {
+      const isAuth = localStorage.getItem('local_auth') === 'true';
+      if (isAuth) {
+        setUser(MOCK_USER);
       } else {
         setUser(null);
       }
       setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [allowedEmail]);
+    };
+    checkSession();
+  }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithPasscode = async (passcode: string) => {
     setError(null);
     setLoading(true);
     try {
-      const auth = getFirebaseAuth();
-      const provider = new GoogleAuthProvider();
-      // Force account selection to avoid auto-login with wrong account
-      provider.setCustomParameters({ prompt: 'select_account' });
-      
-      const result = await signInWithPopup(auth, provider);
-      
-      if (
-        allowedEmail &&
-        result.user.email?.toLowerCase() !== allowedEmail.toLowerCase()
-      ) {
-        await firebaseSignOut(auth);
-        setError('Unauthorized account.');
+      // Simulate slight delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (passcode === VALID_PASSCODE) {
+        localStorage.setItem('local_auth', 'true');
+        setUser(MOCK_USER);
+      } else {
+        setError('Invalid passcode.');
       }
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Sign-in failed.';
-      setError(message);
+      setError('Sign-in failed.');
     } finally {
       setLoading(false);
     }
   };
 
   const signOut = async () => {
-    const auth = getFirebaseAuth();
-    await firebaseSignOut(auth);
+    localStorage.removeItem('local_auth');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, error, signInWithPasscode, signOut }}>
       {children}
     </AuthContext.Provider>
   );

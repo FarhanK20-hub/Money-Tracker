@@ -77,12 +77,12 @@ function AddContent() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-24">
+    <div className="min-h-screen bg-zinc-50 dark:bg-background pb-24 transition-colors">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-zinc-50/95 backdrop-blur-lg border-b border-zinc-100 px-5 py-4">
+      <header className="sticky top-0 z-30 bg-zinc-50/95 dark:bg-background/80 backdrop-blur-lg border-b border-zinc-100 dark:border-white/5 px-5 py-4 transition-colors">
         <div className="max-w-lg mx-auto">
-          <h1 className="text-lg font-bold text-zinc-800 tracking-tight">Add Transaction</h1>
-          <p className="text-[11px] text-zinc-400 font-medium">Manual entry</p>
+          <h1 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 tracking-tight">Add Transaction</h1>
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium tracking-wide">Manual entry</p>
         </div>
       </header>
 

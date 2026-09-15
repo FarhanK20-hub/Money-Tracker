@@ -1,18 +1,27 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { FixedDeposit, formatCurrency } from '@/lib/constants';
 
 interface FDCardProps {
   fd: FixedDeposit;
   onRecordMaturity?: () => void;
   onLogInterest?: () => void;
+  onDelete?: () => void;
 }
 
-export default function FDCard({ fd, onRecordMaturity, onLogInterest }: FDCardProps) {
+export default function FDCard({ fd, onRecordMaturity, onLogInterest, onDelete }: FDCardProps) {
   const isActive = fd.status === 'active';
-  const daysLeft = Math.ceil(
-    (fd.maturityDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-  );
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNow(Date.now());
+  }, []);
+
+  const daysLeft = now !== null 
+    ? Math.ceil((fd.maturityDate.getTime() - now) / (1000 * 60 * 60 * 24))
+    : 0;
 
   return (
     <div
@@ -31,15 +40,30 @@ export default function FDCard({ fd, onRecordMaturity, onLogInterest }: FDCardPr
             {fd.maturityDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
           </p>
         </div>
-        <span
-          className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
-            isActive
-              ? 'bg-emerald-50 text-emerald-700'
-              : 'bg-zinc-100 text-zinc-500'
-          }`}
-        >
-          {isActive ? 'Active' : 'Matured'}
-        </span>
+        <div className="flex flex-col items-end gap-2">
+          <span
+            className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
+              isActive
+                ? 'bg-emerald-50 text-emerald-700'
+                : 'bg-zinc-100 text-zinc-500'
+            }`}
+          >
+            {isActive ? 'Active' : 'Matured'}
+          </span>
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm('Are you sure you want to delete this FD?')) {
+                  onDelete();
+                }
+              }}
+              className="text-[10px] text-zinc-400 hover:text-red-600 transition-colors uppercase font-bold tracking-wider"
+            >
+              Delete
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-3">

@@ -1,10 +1,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
-import { getFirebaseDb } from '@/lib/firebase';
-import { COLLECTIONS, Transaction, FixedDeposit } from '@/lib/constants';
-import { docToTransaction, docToFD, DashboardData } from '@/lib/firestore';
+import { Transaction, FixedDeposit } from '@/lib/constants';
+import { getTransactions, getFixedDeposits, DashboardData, notifyDataChanged } from '@/lib/firestore';
+import { syncFromGist } from '@/lib/gist-sync';
 import { useAuth } from '@/lib/auth-context';
 
 interface DataContextType {
@@ -13,6 +12,7 @@ interface DataContextType {
   dashboardData: DashboardData | null;
   loading: boolean;
   error: string | null;
+  isSyncing: boolean;
 }
 
 const DataContext = createContext<DataContextType>({
@@ -21,6 +21,7 @@ const DataContext = createContext<DataContextType>({
   dashboardData: null,
   loading: true,
   error: null,
+  isSyncing: false,
 });
 
 export function DataProvider({ children }: { children: ReactNode }) {
@@ -30,9 +31,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [loadingTx, setLoadingTx] = useState(true);
   const [loadingFds, setLoadingFds] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTransactions([]);
       setFds([]);
       setLoadingTx(false);
@@ -40,37 +43,71 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setLoadingTx(true);
-    setLoadingFds(true);
-    const db = getFirebaseDb();
+    const loadData = async () => {
+      setLoadingTx(true);
+      setLoadingFds(true);
+      try {
+        const [txs, fdsData] = await Promise.all([
+          getTransactions('all'),
+          getFixedDeposits()
+        ]);
+        setTransactions(txs);
+        setFds(fdsData);
+      } catch (err) {
+        console.error('Local data load error:', err);
+        setError('Failed to load local data');
+      } finally {
+        setLoadingTx(false);
+        setLoadingFds(false);
+      }
+    };
 
-    // 1. Listen to Transactions
-    const txQuery = query(collection(db, COLLECTIONS.TRANSACTIONS), orderBy('timestamp', 'desc'));
-    const unsubTx = onSnapshot(txQuery, (snap) => {
-      const txs = snap.docs.map((d) => docToTransaction(d.id, d.data()));
-      setTransactions(txs);
-      setLoadingTx(false);
-    }, (err) => {
-      console.error('Tx listener error:', err);
-      setError('Failed to load transactions');
-      setLoadingTx(false);
-    });
+    // 1. Load from localStorage immediately (instant)
+    loadData();
 
-    // 2. Listen to Fixed Deposits
-    const fdQuery = query(collection(db, COLLECTIONS.FIXED_DEPOSITS), orderBy('createdAt', 'desc'));
-    const unsubFd = onSnapshot(fdQuery, (snap) => {
-      const fdList = snap.docs.map((d) => docToFD(d.id, d.data()));
-      setFds(fdList);
-      setLoadingFds(false);
-    }, (err) => {
-      console.error('FD listener error:', err);
-      setError('Failed to load fixed deposits');
-      setLoadingFds(false);
-    });
+    // 2. Pull from Gist in background — if new data found, reload
+    setIsSyncing(true);
+    syncFromGist()
+      .then((changed) => {
+        if (changed) {
+          notifyDataChanged();
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsSyncing(false));
+
+    const handleLocalDataChange = () => {
+      loadData();
+    };
+
+    window.addEventListener('local-data-changed', handleLocalDataChange);
+
+    // ── Drain the server webhook queue into localStorage ──────────────
+    const drainWebhookQueue = async () => {
+      try {
+        const res = await fetch('/api/transactions', {
+          headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_SECRET_KEY || ''}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const queued = data.queued as Array<Record<string, unknown>>;
+        if (!queued || queued.length === 0) return;
+
+        // Merge into localStorage transactions
+        const COLLECTIONS_KEY = 'transactions';
+        const raw = localStorage.getItem(COLLECTIONS_KEY);
+        const existing: unknown[] = raw ? JSON.parse(raw) : [];
+        const merged = [...existing, ...queued];
+        localStorage.setItem(COLLECTIONS_KEY, JSON.stringify(merged));
+        notifyDataChanged();
+      } catch {
+        // Silently ignore — offline or not deployed
+      }
+    };
+    drainWebhookQueue();
 
     return () => {
-      unsubTx();
-      unsubFd();
+      window.removeEventListener('local-data-changed', handleLocalDataChange);
     };
   }, [user]);
 
@@ -120,7 +157,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <DataContext.Provider value={{ transactions, fds, dashboardData, loading: isLoading, error }}>
+    <DataContext.Provider value={{ transactions, fds, dashboardData, loading: isLoading, error, isSyncing }}>
       {children}
     </DataContext.Provider>
   );

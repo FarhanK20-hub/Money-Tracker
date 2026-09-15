@@ -5,9 +5,10 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import BottomNav from '@/components/BottomNav';
 import FDCard from '@/components/FDCard';
 import Modal from '@/components/Modal';
-import { addFixedDeposit, updateFixedDepositStatus, addFDTransaction, addTransaction } from '@/lib/firestore';
+import { addFixedDeposit, updateFixedDepositStatus, addFDTransaction, addTransaction, deleteFixedDeposit } from '@/lib/firestore';
 import { useData } from '@/lib/data-context';
 import { FixedDeposit, formatCurrency } from '@/lib/constants';
+import { AnimatedList, AnimatedItem } from '@/components/motion';
 
 export default function FixedDepositsPage() {
   return (
@@ -140,23 +141,56 @@ function FDContent() {
   const maturedFDs = fds.filter((fd) => fd.status === 'matured');
   const totalActive = activeFDs.reduce((s, fd) => s + fd.principal, 0);
 
+  const handleExportCSV = () => {
+    if (fds.length === 0) return;
+    const headers = ['Bank Name', 'Principal', 'Interest Rate', 'Start Date', 'Maturity Date', 'Status', 'Notes'];
+    const rows = fds.map(fd => [
+      `"${fd.bankName.replace(/"/g, '""')}"`,
+      fd.principal.toString(),
+      fd.interestRate.toString(),
+      fd.startDate.toISOString().split('T')[0],
+      fd.maturityDate.toISOString().split('T')[0],
+      fd.status,
+      `"${(fd.notes || '').replace(/"/g, '""')}"`
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `fixed_deposits_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <div className="min-h-screen bg-zinc-50 pb-24">
+    <div className="min-h-screen bg-zinc-50 dark:bg-background pb-24 transition-colors">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-zinc-50/95 backdrop-blur-lg border-b border-zinc-100 px-5 py-4">
+      <header className="sticky top-0 z-30 bg-zinc-50/95 dark:bg-background/80 backdrop-blur-lg border-b border-zinc-100 dark:border-white/5 px-5 py-4 transition-colors">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-zinc-800 tracking-tight">Fixed Deposits</h1>
-            <p className="text-[11px] text-zinc-400 font-medium">
+            <h1 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 tracking-tight">Fixed Deposits</h1>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium tracking-wide">
               {activeFDs.length} active · {formatCurrency(totalActive)} locked
             </p>
           </div>
-          <button
-            onClick={() => setShowNewFD(true)}
-            className="text-xs font-semibold px-3.5 py-2 rounded-lg bg-business-100 text-business-700 border border-business-200 hover:bg-business-200 transition-all active:scale-[0.98]"
-          >
-            + New FD
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportCSV}
+              disabled={fds.length === 0}
+              className="text-[11px] font-semibold px-3.5 py-2 rounded-full bg-zinc-100 dark:bg-white/10 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/20 transition-colors disabled:opacity-50 active:scale-95"
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={() => setShowNewFD(true)}
+              className="text-[11px] font-semibold px-3.5 py-2 rounded-full bg-business-100 dark:bg-business-500/20 text-business-700 dark:text-business-400 border border-business-200 dark:border-business-500/30 hover:bg-business-200 dark:hover:bg-business-500/30 transition-all active:scale-[0.98]"
+            >
+              + New FD
+            </button>
+          </div>
         </div>
       </header>
 
@@ -166,9 +200,15 @@ function FDContent() {
             <div className="w-8 h-8 border-2 border-zinc-300 border-t-zinc-700 rounded-full animate-spin" />
           </div>
         ) : fds.length === 0 ? (
-          <div className="text-center py-20 animate-fade-in-up">
-            <p className="text-base font-semibold text-zinc-700">No fixed deposits</p>
-            <p className="text-sm text-zinc-400 mt-1">Tap &quot;+ New FD&quot; to record one</p>
+          <div className="flex flex-col items-center justify-center py-20 animate-fade-in-up mt-8 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-white/5 bg-zinc-50/50 dark:bg-white/[0.01]">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300 dark:text-zinc-600 mb-4">
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <line x1="2" y1="10" x2="22" y2="10" />
+              <line x1="6" y1="14" x2="10" y2="14" />
+              <line x1="14" y1="14" x2="18" y2="14" />
+            </svg>
+            <p className="text-base font-bold text-zinc-700 dark:text-zinc-300">No fixed deposits</p>
+            <p className="text-sm text-zinc-400 dark:text-zinc-500 mt-1">Tap &quot;+ New FD&quot; to record one</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -176,17 +216,20 @@ function FDContent() {
             {activeFDs.length > 0 && (
               <section>
                 <h2 className="text-xs font-bold uppercase tracking-widest text-business-600 mb-3">Active</h2>
-                <div className="space-y-3">
-                  {activeFDs.map((fd, i) => (
-                    <div key={fd.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 0.05}s` }}>
-                      <FDCard
-                        fd={fd}
-                        onRecordMaturity={() => setShowMaturity(fd)}
-                        onLogInterest={() => setShowInterest(fd)}
-                      />
-                    </div>
-                  ))}
-                </div>
+                <AnimatedList>
+                  <div className="space-y-3">
+                    {activeFDs.map((fd, i) => (
+                      <AnimatedItem key={fd.id} index={i} layoutId={fd.id}>
+                        <FDCard
+                          fd={fd}
+                          onRecordMaturity={() => setShowMaturity(fd)}
+                          onLogInterest={() => setShowInterest(fd)}
+                          onDelete={() => deleteFixedDeposit(fd.id)}
+                        />
+                      </AnimatedItem>
+                    ))}
+                  </div>
+                </AnimatedList>
               </section>
             )}
 
@@ -194,11 +237,15 @@ function FDContent() {
             {maturedFDs.length > 0 && (
               <section>
                 <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3">Matured</h2>
-                <div className="space-y-3">
-                  {maturedFDs.map((fd) => (
-                    <FDCard key={fd.id} fd={fd} />
-                  ))}
-                </div>
+                <AnimatedList>
+                  <div className="space-y-3">
+                    {maturedFDs.map((fd, i) => (
+                      <AnimatedItem key={fd.id} index={i} layoutId={`m-${fd.id}`}>
+                        <FDCard key={fd.id} fd={fd} onDelete={() => deleteFixedDeposit(fd.id)} />
+                      </AnimatedItem>
+                    ))}
+                  </div>
+                </AnimatedList>
               </section>
             )}
           </div>

@@ -6,6 +6,9 @@ import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import BottomNav from '@/components/BottomNav';
 import StatCard from '@/components/StatCard';
+import SpendingDonut from '@/components/SpendingDonut';
+import TransactionCard from '@/components/TransactionCard';
+import { deleteTransaction } from '@/lib/firestore';
 
 export default function DashboardPage() {
   return (
@@ -17,7 +20,7 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const { signOut } = useAuth();
-  const { dashboardData: data, loading, error } = useData();
+  const { dashboardData: data, transactions: allTransactions, loading, error, isSyncing } = useData();
 
   if (loading || !data) {
     return (
@@ -39,19 +42,27 @@ function DashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-24">
+    <div className="min-h-screen bg-zinc-50 dark:bg-background pb-24 transition-colors">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-zinc-50/95 backdrop-blur-lg border-b border-zinc-100 px-5 py-4">
+      <header className="sticky top-0 z-30 bg-zinc-50/95 dark:bg-background/80 backdrop-blur-lg border-b border-zinc-100 dark:border-white/5 px-5 py-4 transition-colors">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-zinc-800 tracking-tight">Money Tracker</h1>
-            <p className="text-[11px] text-zinc-400 font-medium">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 tracking-tight">Money Tracker</h1>
+              {isSyncing && (
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-personal-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-personal-500" />
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium tracking-wide">
               {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
           </div>
           <button
             onClick={signOut}
-            className="text-xs text-zinc-400 hover:text-zinc-600 font-medium transition-colors px-3 py-1.5 rounded-lg hover:bg-zinc-100"
+            className="text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100 font-semibold transition-colors px-3 py-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-white/5 active:scale-95"
           >
             Sign out
           </button>
@@ -103,9 +114,9 @@ function DashboardContent() {
 
         {/* Divider */}
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-zinc-200" />
-          <span className="text-[10px] font-medium text-zinc-300 uppercase tracking-widest">Independent Systems</span>
-          <div className="flex-1 h-px bg-zinc-200" />
+          <div className="flex-1 h-px bg-zinc-200 dark:bg-white/10" />
+          <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Independent Systems</span>
+          <div className="flex-1 h-px bg-zinc-200 dark:bg-white/10" />
         </div>
 
         {/* ─── Business Section ─── */}
@@ -134,6 +145,44 @@ function DashboardContent() {
         </section>
 
         {/* Removed manual refresh button since it's real-time now */}
+
+        {/* ─── Spending Breakdown Chart ─── */}
+        <section className="animate-fade-in-up delay-4">
+          <SpendingDonut
+            personalIncome={data.personalIncome}
+            businessIncome={data.businessIncome}
+            personalExpenses={data.personalExpenses}
+            businessExpenses={data.businessExpenses}
+          />
+        </section>
+
+        {/* ─── Recent Activity ─── */}
+        {(() => {
+          const recentTxs = [...allTransactions]
+            .filter(tx => tx.category !== 'unverified_income')
+            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+            .slice(0, 5);
+          if (recentTxs.length === 0) return null;
+          return (
+            <section className="animate-fade-in-up delay-5">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Recent Activity</h2>
+                <Link href="/transactions" className="text-[11px] font-semibold text-zinc-500 hover:text-zinc-700 transition-colors">
+                  See all →
+                </Link>
+              </div>
+              <div className="space-y-2.5">
+                {recentTxs.map(tx => (
+                  <TransactionCard
+                    key={tx.id}
+                    transaction={tx}
+                    onDelete={() => deleteTransaction(tx.id)}
+                  />
+                ))}
+              </div>
+            </section>
+          );
+        })()}
       </main>
 
       <BottomNav />
