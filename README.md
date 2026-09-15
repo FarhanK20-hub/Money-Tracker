@@ -1,25 +1,24 @@
-# Money Tracker 💸
+# Money Tracker
 
-A beautiful, mobile-first web application for independently tracking Personal and Business finances. Designed to be completely free to host and operate, with a strict single-user architecture and a seamless iOS Shortcuts integration for automated transaction logging.
+A mobile-first web application for tracking personal and business finances. Built with a local-first architecture for instant performance and GitHub Gist for free multi-device syncing.
 
-## Features ✨
+## Features
 
-- **Dual-System Architecture:** Completely separate tracking for Personal and Business finances.
-- **Fixed Deposits Manager:** Log business funds into Fixed Deposits and track interest earned. 
-- **Real-Time Data Sync:** Built with Firebase Firestore's `onSnapshot` global data provider for instant, zero-loading page transitions.
-- **Automated iOS Logging API:** Secure Webhook API designed to receive transaction payloads directly from iOS Shortcuts or banking SMS triggers.
-- **Review Queue:** Automatically catches unverified income (e.g. unknown senders via the API) and places them in a dedicated review queue for manual classification.
+- **Dual-System Architecture:** Separate tracking for Personal and Business finances.
+- **Fixed Deposits Manager:** Log business funds into Fixed Deposits and track interest. 
+- **Local-First Sync:** Zero loading screens. Data is read from and written to `localStorage` instantly, with background syncing to a private GitHub Gist.
+- **Automated iOS Logging API:** Webhook endpoint designed to receive transaction payloads directly from iOS Shortcuts or banking SMS triggers.
+- **Review Queue:** Automatically catches unverified income (e.g., unknown senders via the API) and places them in a dedicated review queue for manual classification.
 - **PWA Ready:** Installable as an app on iOS/Android home screens for a native feel.
-- **Single-User Lock:** Hardcoded email verification blocks all other accounts from logging in.
+- **Passcode Protection:** Local passcode required to access the app.
 
-## Tech Stack 🛠️
+## Tech Stack
 
 - **Frontend:** Next.js (App Router), React, TypeScript, Tailwind CSS v4
-- **Backend/Database:** Firebase (Firestore, Authentication)
-- **Hosting Target:** Vercel (Hobby Tier)
-- **API:** Next.js API Routes + Firebase Admin SDK
+- **Storage:** `localStorage` + GitHub Gist API
+- **Hosting Target:** Vercel
 
-## Local Development 💻
+## Local Development
 
 1. **Clone the repository:**
    ```bash
@@ -32,8 +31,8 @@ A beautiful, mobile-first web application for independently tracking Personal an
    npm install
    ```
 
-3. **Set up Firebase Environment Variables:**
-   Rename `.env.local.example` to `.env.local` and fill in your Firebase configuration keys and Admin SDK credentials.
+3. **Set up Environment Variables:**
+   Rename `.env.local.example` to `.env.local` and add your passcode and API secret key.
 
 4. **Run the development server:**
    ```bash
@@ -43,27 +42,5 @@ A beautiful, mobile-first web application for independently tracking Personal an
 5. **Open the app:**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-## iOS Shortcut Webhook API 📱
-
-The app includes a secure POST endpoint at `/api/transactions` designed for Apple Shortcuts.
-
-**Headers required:**
-- `Authorization: Bearer <API_SECRET_KEY>`
-
-**JSON Payload Example:**
-```json
-{
-  "amount": 450,
-  "direction": "debit",
-  "rawSender": "Zomato UPI",
-  "notes": "Lunch"
-}
-```
-
-The API automatically parses the direction and sender:
-- `debit` goes to `personal_expense`.
-- `credit` matching `MOM_ACCOUNT_IDENTIFIERS` goes to `personal_income`.
-- `credit` from an unknown source is flagged as `unverified_income` for the Review Queue.
-
 ## License
-MIT License. Created for personal use.
+MIT License.
