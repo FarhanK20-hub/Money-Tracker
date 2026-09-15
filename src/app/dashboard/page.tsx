@@ -9,6 +9,7 @@ import StatCard from '@/components/StatCard';
 import SpendingDonut from '@/components/SpendingDonut';
 import TransactionCard from '@/components/TransactionCard';
 import { deleteTransaction } from '@/lib/firestore';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function DashboardPage() {
   return (
@@ -60,12 +61,15 @@ function DashboardContent() {
               {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
           </div>
-          <button
-            onClick={signOut}
-            className="text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100 font-semibold transition-colors px-3 py-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-white/5 active:scale-95"
-          >
-            Sign out
-          </button>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <button
+              onClick={signOut}
+              className="text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100 font-semibold transition-colors px-3 py-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-white/5 active:scale-95"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 

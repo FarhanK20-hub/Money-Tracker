@@ -3,6 +3,7 @@ import { Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { DataProvider } from "@/lib/data-context";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const outfit = Outfit({
   variable: "--font-sans",
@@ -41,16 +42,18 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${outfit.variable} ${jetbrains.variable} h-full antialiased`}>
+    <html lang="en" className={`${outfit.variable} ${jetbrains.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
-        <AuthProvider>
-          <DataProvider>
-            {children}
-          </DataProvider>
-        </AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
+          <AuthProvider>
+            <DataProvider>
+              {children}
+            </DataProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

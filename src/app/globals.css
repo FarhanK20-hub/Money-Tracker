@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
@@ -52,19 +53,17 @@
   --text-muted: #94a3b8;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #000000;
-    --foreground: #f8fafc;
+.dark {
+  --background: #000000;
+  --foreground: #f8fafc;
 
-    --surface-1: #111111;
-    --surface-2: #1c1c1c;
-    --surface-3: #2a2a2a;
-    --border-color: rgba(255, 255, 255, 0.1);
-    --text-primary: #f8fafc;
-    --text-secondary: #a1a1aa;
-    --text-muted: #71717a;
-  }
+  --surface-1: #111111;
+  --surface-2: #1c1c1c;
+  --surface-3: #2a2a2a;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --text-primary: #f8fafc;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
 }
 
 /* ── Base ──────────────────────────────────────────────────────────── */
@@ -83,65 +82,63 @@ body {
 
 /* ── Dark-mode component overrides ────────────────────────────────── */
 
-@media (prefers-color-scheme: dark) {
-  /* Cards */
-  .dark-card {
-    background: var(--surface-1) !important;
-    border-color: var(--border-color) !important;
-  }
-
-  /* Nav */
-  .dark-nav {
-    background: color-mix(in srgb, var(--surface-1) 95%, transparent) !important;
-    border-color: var(--border-color) !important;
-  }
-
-  /* Inputs */
-  .dark-input {
-    background: var(--surface-2) !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-primary) !important;
-  }
-
-  /* Header */
-  .dark-header {
-    background: color-mix(in srgb, var(--background) 95%, transparent) !important;
-    border-color: var(--border-color) !important;
-  }
-
-  /* Invert light backgrounds for zinc shades */
-  .bg-white { background-color: var(--surface-1) !important; }
-  .bg-zinc-50 { background-color: var(--background) !important; }
-  .bg-zinc-100 { background-color: var(--surface-2) !important; }
-  .bg-zinc-200 { background-color: var(--surface-3) !important; }
-  .border-zinc-100 { border-color: var(--border-color) !important; }
-  .border-zinc-200 { border-color: var(--surface-3) !important; }
-
-  /* Text */
-  .text-zinc-800 { color: var(--text-primary) !important; }
-  .text-zinc-700 { color: #d4d4d8 !important; }
-  .text-zinc-600 { color: var(--text-secondary) !important; }
-  .text-zinc-500 { color: var(--text-secondary) !important; }
-  .text-zinc-400 { color: var(--text-muted) !important; }
-  .text-zinc-300 { color: #52525b !important; }
-  .text-zinc-900 { color: #f4f4f5 !important; }
-
-  /* Buttons */
-  .bg-zinc-800 { background-color: #e4e4e7 !important; }
-  .bg-zinc-800.text-white { color: #18181b !important; }
-  .hover\:bg-zinc-700:hover { background-color: #d4d4d8 !important; }
-  .bg-zinc-900 { background-color: #d4d4d8 !important; }
-  .hover\:bg-zinc-800:hover { background-color: #e4e4e7 !important; }
-
-  /* Stat cards */
-  .bg-personal-50\/60 { background-color: color-mix(in srgb, #0d9488 15%, transparent) !important; }
-  .bg-business-50\/60 { background-color: color-mix(in srgb, #d97706 15%, transparent) !important; }
-  .bg-pending-50\/60  { background-color: color-mix(in srgb, #f97316 15%, transparent) !important; }
-
-  /* Spinner contrast */
-  .border-zinc-300 { border-color: #3f3f46 !important; }
-  .border-t-zinc-700 { border-top-color: #e4e4e7 !important; }
+/* Cards */
+.dark .dark-card {
+  background: var(--surface-1) !important;
+  border-color: var(--border-color) !important;
 }
+
+/* Nav */
+.dark .dark-nav {
+  background: color-mix(in srgb, var(--surface-1) 95%, transparent) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Inputs */
+.dark .dark-input {
+  background: var(--surface-2) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Header */
+.dark .dark-header {
+  background: color-mix(in srgb, var(--background) 95%, transparent) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Invert light backgrounds for zinc shades */
+.dark .bg-white { background-color: var(--surface-1) !important; }
+.dark .bg-zinc-50 { background-color: var(--background) !important; }
+.dark .bg-zinc-100 { background-color: var(--surface-2) !important; }
+.dark .bg-zinc-200 { background-color: var(--surface-3) !important; }
+.dark .border-zinc-100 { border-color: var(--border-color) !important; }
+.dark .border-zinc-200 { border-color: var(--surface-3) !important; }
+
+/* Text */
+.dark .text-zinc-800 { color: var(--text-primary) !important; }
+.dark .text-zinc-700 { color: #d4d4d8 !important; }
+.dark .text-zinc-600 { color: var(--text-secondary) !important; }
+.dark .text-zinc-500 { color: var(--text-secondary) !important; }
+.dark .text-zinc-400 { color: var(--text-muted) !important; }
+.dark .text-zinc-300 { color: #52525b !important; }
+.dark .text-zinc-900 { color: #f4f4f5 !important; }
+
+/* Buttons */
+.dark .bg-zinc-800 { background-color: #e4e4e7 !important; }
+.dark .bg-zinc-800.text-white { color: #18181b !important; }
+.dark .hover\:bg-zinc-700:hover { background-color: #d4d4d8 !important; }
+.dark .bg-zinc-900 { background-color: #d4d4d8 !important; }
+.dark .hover\:bg-zinc-800:hover { background-color: #e4e4e7 !important; }
+
+/* Stat cards */
+.dark .bg-personal-50\/60 { background-color: color-mix(in srgb, #0d9488 15%, transparent) !important; }
+.dark .bg-business-50\/60 { background-color: color-mix(in srgb, #d97706 15%, transparent) !important; }
+.dark .bg-pending-50\/60  { background-color: color-mix(in srgb, #f97316 15%, transparent) !important; }
+
+/* Spinner contrast */
+.dark .border-zinc-300 { border-color: #3f3f46 !important; }
+.dark .border-t-zinc-700 { border-top-color: #e4e4e7 !important; }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────── */
 
