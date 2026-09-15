@@ -1,24 +1,26 @@
 # Money Tracker
 
-A mobile-first web application for tracking personal and business finances. Built with a local-first architecture for instant performance and GitHub Gist for free multi-device syncing.
+A beautifully crafted, mobile-first web application designed for independently tracking personal and business finances. Built with a local-first architecture for absolute privacy and zero-latency performance.
 
 ## Features
 
-- **Dual-System Architecture:** Separate tracking for Personal and Business finances.
-- **Fixed Deposits Manager:** Log business funds into Fixed Deposits and track interest. 
-- **Local-First Sync:** Zero loading screens. Data is read from and written to `localStorage` instantly, with background syncing to a private GitHub Gist.
-- **Automated iOS Logging API:** Webhook endpoint designed to receive transaction payloads directly from iOS Shortcuts or banking SMS triggers.
-- **Review Queue:** Automatically catches unverified income (e.g., unknown senders via the API) and places them in a dedicated review queue for manual classification.
-- **PWA Ready:** Installable as an app on iOS/Android home screens for a native feel.
-- **Passcode Protection:** Local passcode required to access the app.
+- **Premium UI/UX:** Built with a modern glassmorphic design system, deep dark mode, smooth micro-interactions, and premium typography (Outfit & JetBrains Mono).
+- **Dual-System Architecture:** Completely separate tracking for Personal and Business finances in one unified dashboard.
+- **Fixed Deposits Manager:** Log business funds into Fixed Deposits and track locked capital vs. liquid cash.
+- **Local-First Sync:** Zero loading screens. Data is read from and written to `localStorage` instantly, with secure background syncing to a private GitHub Gist for multi-device access.
+- **iOS Automation API:** Includes a secure Webhook endpoint designed to receive transaction payloads directly from Apple Shortcuts or automated banking SMS triggers.
+- **Review Queue:** Automatically intercepts unverified income (e.g., from unknown API sources) and holds them in a dedicated queue for manual classification.
+- **PWA Ready:** Installable directly to iOS/Android home screens for a native app experience.
+- **Secure Access:** Protected by a local passcode authentication system.
 
 ## Tech Stack
 
-- **Frontend:** Next.js (App Router), React, TypeScript, Tailwind CSS v4
-- **Storage:** `localStorage` + GitHub Gist API
-- **Hosting Target:** Vercel
+- **Framework:** Next.js (App Router), React, TypeScript
+- **Styling:** Tailwind CSS v4
+- **Storage:** Browser `localStorage` + GitHub Gist API (Local-First Sync)
+- **Deployment:** Vercel
 
-## Local Development
+## Local Setup
 
 1. **Clone the repository:**
    ```bash
@@ -31,16 +33,16 @@ A mobile-first web application for tracking personal and business finances. Buil
    npm install
    ```
 
-3. **Set up Environment Variables:**
-   Rename `.env.local.example` to `.env.local` and add your passcode and API secret key.
+3. **Configure Environment:**
+   Rename `.env.local.example` to `.env.local` and add your passcode, API secret key, and GitHub Gist token.
 
 4. **Run the development server:**
    ```bash
    npm run dev
    ```
 
-5. **Open the app:**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## License
+
 MIT License.
