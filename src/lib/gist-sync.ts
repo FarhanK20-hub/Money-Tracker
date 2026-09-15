@@ -1,4 +1,4 @@
-﻿/**
+/**
  * gist-sync.ts
  * Local-First GitHub Gist sync.
  * - All UI reads from localStorage (instant, no latency)
@@ -47,26 +47,37 @@ function writeLocalRaw(key: string, data: unknown[]) {
 function mergeById<T extends { id: string; createdAt: unknown }>(
   local: T[],
   remote: T[],
-): T[] {
+): { merged: T[]; changed: boolean } {
   const map = new Map<string, T>();
+  let changed = false;
+
   for (const item of local) map.set(item.id, item);
+  
   for (const item of remote) {
     const existing = map.get(item.id);
     if (!existing) {
       map.set(item.id, item);
+      changed = true;
     } else {
       const existingTime = existing.createdAt instanceof Date
         ? existing.createdAt.getTime()
-        : new Date(existing.createdAt as string).getTime();
+        : new Date(existing.createdAt as string || 0).getTime();
       const remoteTime = item.createdAt instanceof Date
         ? item.createdAt.getTime()
-        : new Date(item.createdAt as string).getTime();
+        : new Date(item.createdAt as string || 0).getTime();
+        
       if (remoteTime > existingTime) {
         map.set(item.id, item);
+        changed = true;
       }
     }
   }
-  return Array.from(map.values());
+  
+  if (map.size !== local.length) {
+    changed = true;
+  }
+  
+  return { merged: Array.from(map.values()), changed };
 }
 
 export async function syncToGist(): Promise<void> {
@@ -118,18 +129,18 @@ export async function syncFromGist(): Promise<boolean> {
       { key: 'fdTransactions', remote: remote.fdTransactions || [] },
     ];
 
-    let changed = false;
+    let anyChanged = false;
     for (const { key, remote: remoteItems } of collections) {
       if (remoteItems.length === 0) continue;
       const local = readLocalRaw(key) as Array<{ id: string; createdAt: unknown }>;
-      const merged = mergeById(local, remoteItems as Array<{ id: string; createdAt: unknown }>);
-      if (merged.length !== local.length) {
+      const { merged, changed } = mergeById(local, remoteItems as Array<{ id: string; createdAt: unknown }>);
+      if (changed) {
         writeLocalRaw(key, merged);
-        changed = true;
+        anyChanged = true;
       }
     }
 
-    return changed;
+    return anyChanged;
   } catch {
     return false;
   }
