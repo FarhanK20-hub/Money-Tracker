@@ -29,50 +29,47 @@ function classifyCredit(rawSender: string): 'personal_income' | 'business_income
   return 'unverified_income';
 }
 
-// ─── localStorage-based storage (server-side) ─────────────────────────────
-// Since this app is client-side localStorage, the webhook writes to a
-// server-side queue file that the client picks up on next load.
+// ─── GitHub Gist Integration ──────────────────────────────────────────────
 
-import { promises as fs } from 'fs';
-import path from 'path';
+const GIST_TOKEN = process.env.NEXT_PUBLIC_GIST_TOKEN || '';
+const GIST_ID = process.env.NEXT_PUBLIC_GIST_ID || '';
+const GIST_API = `https://api.github.com/gists/${GIST_ID}`;
 
-const QUEUE_FILE = path.join(process.cwd(), '.webhook-queue.json');
+async function appendToGist(entry: Record<string, unknown>) {
+  if (!GIST_TOKEN || !GIST_ID) return;
 
-async function appendToQueue(entry: Record<string, unknown>) {
-  let queue: Record<string, unknown>[] = [];
-  try {
-    const raw = await fs.readFile(QUEUE_FILE, 'utf-8');
-    queue = JSON.parse(raw);
-  } catch {
-    // File doesn't exist yet — start fresh
-  }
-  queue.push(entry);
-  await fs.writeFile(QUEUE_FILE, JSON.stringify(queue, null, 2), 'utf-8');
-}
+  // 1. Fetch current gist
+  const res = await fetch(GIST_API, {
+    headers: { Authorization: `token ${GIST_TOKEN}`, 'Cache-Control': 'no-cache' },
+  });
+  if (!res.ok) throw new Error('Failed to fetch gist');
+  
+  const gistData = await res.json();
+  const fileContent = gistData?.files?.['money-tracker-data.json']?.content;
+  if (!fileContent) return;
 
-// ─── GET /api/transactions — health check / queue drain ──────────────────
+  const payload = JSON.parse(fileContent);
+  
+  // 2. Append transaction
+  payload.transactions = payload.transactions || [];
+  payload.transactions.push(entry);
+  payload.lastUpdated = new Date().toISOString();
 
-export async function GET(req: NextRequest) {
-  // Validate the bearer token
-  const authHeader = req.headers.get('authorization') || '';
-  const token = authHeader.replace('Bearer ', '').trim();
-  const expected = process.env.API_SECRET_KEY;
-
-  if (!expected || token !== expected) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Return queued transactions and clear the file
-  let queue: Record<string, unknown>[] = [];
-  try {
-    const raw = await fs.readFile(QUEUE_FILE, 'utf-8');
-    queue = JSON.parse(raw);
-    await fs.writeFile(QUEUE_FILE, '[]', 'utf-8');
-  } catch {
-    // No file — empty queue
-  }
-
-  return NextResponse.json({ ok: true, queued: queue }, { status: 200 });
+  // 3. Save back to gist
+  await fetch(GIST_API, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `token ${GIST_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      files: {
+        'money-tracker-data.json': {
+          content: JSON.stringify(payload)
+        }
+      }
+    }),
+  });
 }
 
 // ─── POST /api/transactions — receive webhook from iOS Shortcuts ──────────
@@ -125,8 +122,13 @@ export async function POST(req: NextRequest) {
     createdAt: new Date().toISOString(),
   };
 
-  // 5. Queue the entry (client will pick it up and merge into localStorage)
-  await appendToQueue(entry);
+  // 5. Save directly to Gist (client will pick it up on next sync)
+  try {
+    await appendToGist(entry);
+  } catch (err) {
+    console.error('Failed to append to gist from webhook', err);
+    return NextResponse.json({ error: 'Failed to save transaction' }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true, id: entry.id, category }, { status: 200 });
 }

@@ -82,30 +82,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     window.addEventListener('local-data-changed', handleLocalDataChange);
 
-    // ── Drain the server webhook queue into localStorage ──────────────
-    const drainWebhookQueue = async () => {
-      try {
-        const res = await fetch('/api/transactions', {
-          headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_SECRET_KEY || ''}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const queued = data.queued as Array<Record<string, unknown>>;
-        if (!queued || queued.length === 0) return;
-
-        // Merge into localStorage transactions
-        const COLLECTIONS_KEY = 'transactions';
-        const raw = localStorage.getItem(COLLECTIONS_KEY);
-        const existing: unknown[] = raw ? JSON.parse(raw) : [];
-        const merged = [...existing, ...queued];
-        localStorage.setItem(COLLECTIONS_KEY, JSON.stringify(merged));
-        notifyDataChanged();
-      } catch {
-        // Silently ignore — offline or not deployed
-      }
-    };
-    drainWebhookQueue();
-
     return () => {
       window.removeEventListener('local-data-changed', handleLocalDataChange);
     };
