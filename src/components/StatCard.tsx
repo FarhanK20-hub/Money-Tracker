@@ -1,6 +1,7 @@
 'use client';
 
 import { formatCurrency } from '@/lib/constants';
+import AnimatedNumber from '@/components/AnimatedNumber';
 
 interface StatCardProps {
   label: string;
@@ -67,7 +68,7 @@ export default function StatCard({
           : 'text-xl sm:text-2xl'
         } leading-tight`}
       >
-        {formatCurrency(amount)}
+        <AnimatedNumber value={amount} />
       </p>
     </div>
   );

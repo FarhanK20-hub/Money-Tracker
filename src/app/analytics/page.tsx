@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useData } from '@/lib/data-context';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import BottomNav from '@/components/BottomNav';
+import AnimatedNumber from '@/components/AnimatedNumber';
 import { formatCurrency } from '@/lib/constants';
 
 export default function AnalyticsPage() {
@@ -179,8 +180,8 @@ function AnalyticsContent() {
         <GlassCard gradient="linear-gradient(135deg, rgba(30,20,0,0.98), rgba(18,18,20,0.98))">
           <div className="p-5">
             <p className="text-[10px] text-amber-600/80 font-bold uppercase tracking-[0.18em] mb-1">Total Net Worth</p>
-            <p className="text-4xl font-bold tabular-nums mb-1" style={{ color: '#f5f5f5', letterSpacing: '-0.02em' }}>
-              {formatCurrency(totalWealth)}
+            <p className="text-4xl font-bold tabular-nums mb-1 flex items-center" style={{ color: '#f5f5f5', letterSpacing: '-0.02em' }}>
+              <AnimatedNumber value={totalWealth} />
             </p>
             <p className="text-xs text-zinc-600 mb-5">Liquid + Investments</p>
 
@@ -239,7 +240,9 @@ function AnalyticsContent() {
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/[0.06]">
               <div>
                 <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-0.5">This Month</p>
-                <p className="text-xl font-bold tabular-nums" style={{ color: '#fbbf24' }}>{formatCurrency(thisMonth.bizIncome)}</p>
+                <p className="text-xl font-bold tabular-nums flex items-center" style={{ color: '#fbbf24' }}>
+                  <AnimatedNumber value={thisMonth.bizIncome} />
+                </p>
               </div>
               {bizGrowth !== null && (
                 <div className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1"
