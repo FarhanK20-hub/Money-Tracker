@@ -93,12 +93,6 @@ export default function BottomNav() {
                 </span>
               )}
 
-              {/* Badge for review */}
-              {item.badge && pendingCount > 0 && (
-                <span className="absolute top-1 right-1 min-w-[16px] h-[16px] flex items-center justify-center text-[9px] font-bold bg-pending-500 text-white rounded-full px-1 shadow-sm shadow-pending-500/30">
-                  {pendingCount > 99 ? '99+' : pendingCount}
-                </span>
-              )}
             </Link>
           );
         })}
