@@ -33,7 +33,6 @@ export default function TransactionCard({
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Edit form state
   const [editAmount, setEditAmount] = useState(transaction.amount.toString());
   const [editCategory, setEditCategory] = useState<TransactionCategory>(transaction.category);
   const [editSender, setEditSender] = useState(transaction.rawSender || '');
@@ -75,32 +74,46 @@ export default function TransactionCard({
     }
   };
 
+  const accentColor = isExpense ? 'rgba(239,68,68,0.7)' : 'rgba(16,185,129,0.7)';
+
   return (
     <>
-      <div className="bg-white dark:bg-white/[0.02] rounded-[20px] border border-zinc-100 dark:border-white/5 p-5 transition-all duration-300 hover:shadow-lg hover:shadow-zinc-200/20 dark:hover:shadow-black/50 hover:scale-[1.01] active:scale-[0.99] relative overflow-hidden group">
-        <div className="flex items-start justify-between gap-3">
+      <div
+        className="relative overflow-hidden rounded-2xl p-4 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] group"
+        style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.05)',
+        }}
+      >
+        {/* Left accent bar */}
+        <div
+          className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full"
+          style={{ background: accentColor }}
+        />
+
+        <div className="flex items-start justify-between gap-3 pl-3">
           <div className="flex-1 min-w-0">
             {/* Category badge */}
             <span
-              className={`inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 ${config.bgColor} ${config.textColor} shadow-sm`}
+              className={`inline-block text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-2 ${config.bgColor} ${config.textColor}`}
             >
               {config.label}
             </span>
 
             {/* Sender / description */}
-            <p className="text-sm font-medium text-zinc-800 truncate">
+            <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
               {transaction.rawSender || 'No description'}
             </p>
 
             {/* Notes */}
             {transaction.notes && (
-              <p className="text-xs text-zinc-400 mt-0.5 truncate">
+              <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
                 {transaction.notes}
               </p>
             )}
 
             {/* Date */}
-            <p className="text-[11px] text-zinc-400 mt-1.5 tabular-nums">
+            <p className="text-[10px] mt-1.5 tabular-nums" style={{ color: 'var(--text-muted)' }}>
               {transaction.timestamp.toLocaleDateString('en-IN', {
                 day: 'numeric',
                 month: 'short',
@@ -115,19 +128,20 @@ export default function TransactionCard({
           </div>
 
           {/* Amount & Actions */}
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end gap-2 shrink-0">
             <p
-              className={`text-lg font-bold tabular-nums whitespace-nowrap ${
-                isExpense ? 'text-red-600' : 'text-emerald-600'
+              className={`text-base font-bold tabular-nums whitespace-nowrap ${
+                isExpense ? 'text-red-400' : 'text-emerald-400'
               }`}
             >
               {isExpense ? '−' : '+'}
               {formatCurrency(transaction.amount)}
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={openEdit}
-                className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors uppercase font-bold tracking-wider"
+                className="text-[9px] font-bold uppercase tracking-wider transition-colors"
+                style={{ color: 'var(--text-muted)' }}
               >
                 Edit
               </button>
@@ -135,11 +149,11 @@ export default function TransactionCard({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (window.confirm('Are you sure you want to delete this entry?')) {
+                    if (window.confirm('Delete this transaction?')) {
                       onDelete();
                     }
                   }}
-                  className="text-[10px] text-zinc-400 hover:text-red-600 transition-colors uppercase font-bold tracking-wider"
+                  className="text-[9px] font-bold uppercase tracking-wider text-red-500/50 hover:text-red-400 transition-colors"
                 >
                   Delete
                 </button>
@@ -150,16 +164,19 @@ export default function TransactionCard({
 
         {/* Review actions */}
         {showActions && (
-          <div className="flex gap-2 mt-3 pt-3 border-t border-zinc-100">
+          <div
+            className="flex gap-2 mt-3 pt-3"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+          >
             <button
               onClick={onClassifyPersonal}
-              className="flex-1 text-xs font-semibold py-2.5 rounded-lg bg-personal-50 text-personal-700 border border-personal-200 hover:bg-personal-100 active:scale-[0.98] transition-all duration-150"
+              className="flex-1 text-xs font-semibold py-2.5 rounded-xl bg-personal-500/10 text-personal-300 border border-personal-500/20 hover:bg-personal-500/20 active:scale-[0.98] transition-all duration-150"
             >
               ✓ Personal
             </button>
             <button
               onClick={onClassifyBusiness}
-              className="flex-1 text-xs font-semibold py-2.5 rounded-lg bg-business-50 text-business-700 border border-business-200 hover:bg-business-100 active:scale-[0.98] transition-all duration-150"
+              className="flex-1 text-xs font-semibold py-2.5 rounded-xl bg-business-500/10 text-business-300 border border-business-500/20 hover:bg-business-500/20 active:scale-[0.98] transition-all duration-150"
             >
               ✓ Business
             </button>
@@ -173,85 +190,88 @@ export default function TransactionCard({
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
           onClick={() => setEditing(false)}
         >
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div
-            className="relative w-full max-w-lg bg-white rounded-t-2xl sm:rounded-2xl p-6 space-y-4 shadow-2xl"
+            className="relative w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-6 space-y-4"
+            style={{
+              background: 'linear-gradient(145deg, #16161f, #101018)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 -20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06)',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-base font-bold text-zinc-800">Edit Transaction</h2>
+            {/* Drag handle */}
+            <div className="w-8 h-1 rounded-full bg-white/10 mx-auto -mt-1 mb-3" />
+
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-white">Edit Transaction</h2>
               <button
                 onClick={() => setEditing(false)}
-                className="text-zinc-400 hover:text-zinc-700 transition-colors"
+                className="w-7 h-7 rounded-full flex items-center justify-center transition-colors"
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)' }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
             </div>
 
-            {/* Amount */}
-            <div>
-              <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Amount (₹)</label>
-              <input
-                type="number"
-                value={editAmount}
-                onChange={(e) => setEditAmount(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-800/10 focus:border-zinc-400 transition-all"
-              />
-            </div>
+            {[
+              { label: 'Amount (₹)', type: 'number', value: editAmount, onChange: setEditAmount },
+              { label: 'Sender / Description', type: 'text', value: editSender, onChange: setEditSender },
+              { label: 'Notes (optional)', type: 'text', value: editNotes, onChange: setEditNotes },
+              { label: 'Date & Time', type: 'datetime-local', value: editDate, onChange: setEditDate },
+            ].map(({ label, type, value, onChange }) => (
+              <div key={label}>
+                <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-muted)' }}>{label}</label>
+                <input
+                  type={type}
+                  value={value}
+                  onChange={(e) => onChange(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl text-sm font-medium text-white focus:outline-none transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = 'rgba(201,168,76,0.4)';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(201,168,76,0.07)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'rgba(255,255,255,0.08)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+            ))}
 
             {/* Category */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Category</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-muted)' }}>Category</label>
               <select
                 value={editCategory}
                 onChange={(e) => setEditCategory(e.target.value as TransactionCategory)}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-800/10 focus:border-zinc-400 transition-all"
+                className="w-full px-4 py-3 rounded-xl text-sm font-medium text-white focus:outline-none transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}
               >
                 {EDITABLE_CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                  <option key={c.value} value={c.value} style={{ background: '#111118' }}>{c.label}</option>
                 ))}
               </select>
-            </div>
-
-            {/* Sender */}
-            <div>
-              <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Sender / Description</label>
-              <input
-                type="text"
-                value={editSender}
-                onChange={(e) => setEditSender(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-800/10 focus:border-zinc-400 transition-all"
-              />
-            </div>
-
-            {/* Notes */}
-            <div>
-              <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Notes (optional)</label>
-              <input
-                type="text"
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-800/10 focus:border-zinc-400 transition-all"
-              />
-            </div>
-
-            {/* Date & Time */}
-            <div>
-              <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Date & Time</label>
-              <input
-                type="datetime-local"
-                value={editDate}
-                onChange={(e) => setEditDate(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-800/10 focus:border-zinc-400 transition-all"
-              />
             </div>
 
             <button
               onClick={handleSave}
               disabled={saving || !editAmount || parseFloat(editAmount) <= 0}
-              className="w-full py-3 rounded-xl bg-zinc-800 text-white text-sm font-semibold hover:bg-zinc-700 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full py-3.5 rounded-2xl text-sm font-bold tracking-wide transition-all active:scale-[0.97] disabled:opacity-30"
+              style={{
+                background: 'linear-gradient(135deg, #c9a84c, #e8c96a, #c9a84c)',
+                color: '#0a0a0f',
+                boxShadow: '0 6px 20px rgba(201,168,76,0.25)',
+              }}
             >
               {saving ? 'Saving…' : 'Save Changes'}
             </button>

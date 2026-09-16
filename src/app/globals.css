@@ -37,6 +37,12 @@
   --color-pending-500: #f97316;
   --color-pending-600: #ea580c;
   --color-pending-700: #c2410c;
+
+  /* Gold — premium accent */
+  --color-gold-300: #fde68a;
+  --color-gold-400: #e8c96a;
+  --color-gold-500: #c9a84c;
+  --color-gold-600: #a8862f;
 }
 
 :root {
@@ -51,19 +57,27 @@
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
+
+  /* Gold tokens */
+  --gold: #c9a84c;
+  --gold-glow: rgba(201, 168, 76, 0.25);
 }
 
 .dark {
-  --background: #000000;
-  --foreground: #f8fafc;
+  --background: #0a0a0f;
+  --foreground: #f0f0f5;
 
-  --surface-1: #111111;
-  --surface-2: #1c1c1c;
-  --surface-3: #2a2a2a;
-  --border-color: rgba(255, 255, 255, 0.1);
-  --text-primary: #f8fafc;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
+  --surface-1: #111118;
+  --surface-2: #18181f;
+  --surface-3: #22222c;
+  --border-color: rgba(255, 255, 255, 0.07);
+  --text-primary: #f0f0f5;
+  --text-secondary: #9898a8;
+  --text-muted: #55555f;
+
+  /* Gold tokens */
+  --gold: #c9a84c;
+  --gold-glow: rgba(201, 168, 76, 0.2);
 }
 
 /* ── Base ──────────────────────────────────────────────────────────── */
@@ -117,12 +131,12 @@ body {
 
 /* Text */
 .dark .text-zinc-800 { color: var(--text-primary) !important; }
-.dark .text-zinc-700 { color: #d4d4d8 !important; }
+.dark .text-zinc-700 { color: #c8c8d8 !important; }
 .dark .text-zinc-600 { color: var(--text-secondary) !important; }
 .dark .text-zinc-500 { color: var(--text-secondary) !important; }
 .dark .text-zinc-400 { color: var(--text-muted) !important; }
-.dark .text-zinc-300 { color: #52525b !important; }
-.dark .text-zinc-900 { color: #f4f4f5 !important; }
+.dark .text-zinc-300 { color: #44444e !important; }
+.dark .text-zinc-900 { color: #eeeef8 !important; }
 
 /* Buttons */
 .dark .bg-zinc-800 { background-color: #e4e4e7 !important; }
@@ -137,7 +151,7 @@ body {
 .dark .bg-pending-50\/60  { background-color: color-mix(in srgb, #f97316 15%, transparent) !important; }
 
 /* Spinner contrast */
-.dark .border-zinc-300 { border-color: #3f3f46 !important; }
+.dark .border-zinc-300 { border-color: #3f3f52 !important; }
 .dark .border-t-zinc-700 { border-top-color: #e4e4e7 !important; }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────── */
@@ -152,6 +166,9 @@ body {
   background: #d4d4d8;
   border-radius: 999px;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #2a2a36;
+}
 
 /* ── Tabular numbers for financial data ────────────────────────────── */
 
@@ -164,7 +181,7 @@ body {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -186,7 +203,7 @@ body {
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
@@ -194,36 +211,108 @@ body {
   }
 }
 
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes goldPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(201, 168, 76, 0.15); }
+  50% { box-shadow: 0 0 40px rgba(201, 168, 76, 0.35); }
+}
+
+@keyframes softGlow {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
 .animate-fade-in-up {
-  animation: fadeInUp 0.4s ease-out both;
+  animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .animate-slide-in-right {
-  animation: slideInRight 0.35s ease-out both;
+  animation: slideInRight 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .animate-scale-in {
-  animation: scaleIn 0.3s ease-out both;
+  animation: scaleIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-gold-pulse {
+  animation: goldPulse 3s ease-in-out infinite;
+}
+
+.animate-soft-glow {
+  animation: softGlow 2.5s ease-in-out infinite;
 }
 
 /* Staggered animation delays */
-.delay-1 { animation-delay: 0.05s; }
-.delay-2 { animation-delay: 0.1s; }
-.delay-3 { animation-delay: 0.15s; }
-.delay-4 { animation-delay: 0.2s; }
-.delay-5 { animation-delay: 0.25s; }
-.delay-6 { animation-delay: 0.3s; }
+.delay-1 { animation-delay: 0.06s; }
+.delay-2 { animation-delay: 0.12s; }
+.delay-3 { animation-delay: 0.18s; }
+.delay-4 { animation-delay: 0.24s; }
+.delay-5 { animation-delay: 0.30s; }
+.delay-6 { animation-delay: 0.36s; }
 
-/* ── Glass card effect ─────────────────────────────────────────────── */
+/* ── Premium glass utilities ────────────────────────────────────────── */
 
 .glass-card {
   background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.dark .glass-card {
+  background: rgba(17, 17, 24, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Gold shimmer text */
+.gold-text {
+  background: linear-gradient(135deg, #c9a84c 0%, #f0d080 40%, #c9a84c 60%, #a8862f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Premium surface with subtle top-edge light */
+.premium-card {
+  position: relative;
+  overflow: hidden;
+}
+.premium-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  pointer-events: none;
+}
+
+/* Gold border glow */
+.gold-border {
+  border-color: rgba(201, 168, 76, 0.4) !important;
+  box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.1), 0 0 24px rgba(201, 168, 76, 0.08);
 }
 
 /* ── Bottom nav safe area ──────────────────────────────────────────── */
 
 .pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+}
+
+/* ── Noise texture overlay ──────────────────────────────────────────── */
+
+.noise-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.4;
+  border-radius: inherit;
 }

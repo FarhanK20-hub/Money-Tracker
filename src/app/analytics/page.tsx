@@ -165,9 +165,9 @@ function AnalyticsContent() {
   const savingsLabel = savingsRate >= 50 ? 'Excellent' : savingsRate >= 20 ? 'Moderate' : 'Low';
 
   return (
-    <div className="min-h-screen pb-32" style={{ background: '#0a0a0a' }}>
+    <div className="min-h-screen pb-32" style={{ background: '#0a0a0f' }}>
       {/* Header */}
-      <header className="sticky top-0 z-30 px-5 pt-5 pb-4" style={{ background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <header className="sticky top-0 z-30 px-5 pt-5 pb-4" style={{ background: 'rgba(10,10,15,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="max-w-lg mx-auto">
           <h1 className="text-2xl font-bold text-zinc-100 tracking-tight">Analytics</h1>
           <p className="text-[11px] text-zinc-600 font-medium mt-0.5 tracking-wide">Full financial picture</p>

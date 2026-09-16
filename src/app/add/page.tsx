@@ -62,13 +62,12 @@ function AddContent() {
       });
 
       setSuccess(true);
-      // Reset form
       setAmount('');
       setSender('');
       setNotes('');
       setDate(new Date().toISOString().split('T')[0]);
 
-      setTimeout(() => setSuccess(false), 2000);
+      setTimeout(() => setSuccess(false), 2500);
     } catch (err) {
       console.error('Add transaction error:', err);
     } finally {
@@ -76,52 +75,76 @@ function AddContent() {
     }
   };
 
+  const inputStyle = {
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.07)',
+    color: 'var(--text-primary)',
+  };
+
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-background pb-24 transition-colors">
+    <div className="min-h-screen bg-background pb-28 transition-colors">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-zinc-50/95 dark:bg-background/80 backdrop-blur-lg border-b border-zinc-100 dark:border-white/5 px-5 py-4 transition-colors">
+      <header
+        className="sticky top-0 z-30 px-5 py-4 transition-colors"
+        style={{
+          background: 'rgba(10,10,15,0.85)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+        }}
+      >
         <div className="max-w-lg mx-auto">
-          <h1 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 tracking-tight">Add Transaction</h1>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium tracking-wide">Manual entry</p>
+          <h1 className="text-lg font-bold text-white tracking-tight">Add Transaction</h1>
+          <p className="text-[10px] font-medium tracking-widest uppercase mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            Manual entry
+          </p>
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-5 py-6">
-        <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in-up">
+      <main className="max-w-lg mx-auto px-4 py-5">
+        <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in-up">
+
           {/* Direction Toggle */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+            <label className="block text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
               Direction
             </label>
             <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleDirectionChange('income')}
-                className={`py-3 rounded-xl text-sm font-semibold border transition-all active:scale-[0.98] ${
-                  direction === 'income'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-white text-zinc-400 border-zinc-200 hover:border-zinc-300'
-                }`}
-              >
-                ↓ Income
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDirectionChange('expense')}
-                className={`py-3 rounded-xl text-sm font-semibold border transition-all active:scale-[0.98] ${
-                  direction === 'expense'
-                    ? 'bg-red-50 text-red-700 border-red-200'
-                    : 'bg-white text-zinc-400 border-zinc-200 hover:border-zinc-300'
-                }`}
-              >
-                ↑ Expense
-              </button>
+              {(['income', 'expense'] as Direction[]).map((d) => {
+                const isActive = direction === d;
+                const isIncome = d === 'income';
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => handleDirectionChange(d)}
+                    className="py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 active:scale-[0.97]"
+                    style={{
+                      background: isActive
+                        ? isIncome
+                          ? 'rgba(16,185,129,0.12)'
+                          : 'rgba(239,68,68,0.12)'
+                        : 'rgba(255,255,255,0.03)',
+                      border: isActive
+                        ? isIncome
+                          ? '1px solid rgba(16,185,129,0.35)'
+                          : '1px solid rgba(239,68,68,0.35)'
+                        : '1px solid rgba(255,255,255,0.06)',
+                      color: isActive
+                        ? isIncome ? '#34d399' : '#f87171'
+                        : 'var(--text-muted)',
+                    }}
+                  >
+                    {isIncome ? '↓ Income' : '↑ Expense'}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+            <label className="block text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
               Category
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -133,13 +156,18 @@ function AddContent() {
                     key={cat.value}
                     type="button"
                     onClick={() => setCategory(cat.value)}
-                    className={`py-3 rounded-xl text-sm font-semibold border transition-all active:scale-[0.98] ${
-                      isActive
-                        ? isPersonal
-                          ? 'bg-personal-50 text-personal-700 border-personal-200'
-                          : 'bg-business-50 text-business-700 border-business-200'
-                        : 'bg-white text-zinc-400 border-zinc-200 hover:border-zinc-300'
-                    }`}
+                    className="py-3 rounded-2xl text-sm font-semibold transition-all duration-200 active:scale-[0.97]"
+                    style={{
+                      background: isActive
+                        ? isPersonal ? 'rgba(20,184,166,0.12)' : 'rgba(245,158,11,0.12)'
+                        : 'rgba(255,255,255,0.03)',
+                      border: isActive
+                        ? isPersonal ? '1px solid rgba(20,184,166,0.35)' : '1px solid rgba(245,158,11,0.35)'
+                        : '1px solid rgba(255,255,255,0.06)',
+                      color: isActive
+                        ? isPersonal ? '#2dd4bf' : '#fbbf24'
+                        : 'var(--text-muted)',
+                    }}
                   >
                     {cat.label}
                   </button>
@@ -148,25 +176,42 @@ function AddContent() {
             </div>
           </div>
 
-          {/* Amount */}
+          {/* Amount — hero input */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
-              Amount (₹)
+            <label className="block text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
+              Amount
             </label>
-            <input
-              type="number"
-              step="0.01"
-              required
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-              className="w-full px-4 py-3.5 rounded-xl border border-zinc-200 bg-white text-zinc-800 text-2xl font-bold tabular-nums placeholder:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-800/10 focus:border-zinc-400 transition-all"
-            />
+            <div className="relative">
+              <span
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold select-none"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                ₹
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                required
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="w-full pl-10 pr-4 py-4 rounded-2xl text-3xl font-bold tabular-nums placeholder:opacity-20 focus:outline-none transition-all duration-200"
+                style={inputStyle}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'rgba(201,168,76,0.4)';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(201,168,76,0.07)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(255,255,255,0.07)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+            </div>
           </div>
 
           {/* Date */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
               Date
             </label>
             <input
@@ -174,13 +219,22 @@ function AddContent() {
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-800/10 focus:border-zinc-400 transition-all"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-medium focus:outline-none transition-all duration-200"
+              style={inputStyle}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'rgba(201,168,76,0.4)';
+                e.target.style.boxShadow = '0 0 0 3px rgba(201,168,76,0.07)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(255,255,255,0.07)';
+                e.target.style.boxShadow = 'none';
+              }}
             />
           </div>
 
           {/* Sender / Description */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
               {direction === 'income' ? 'From / Sender' : 'To / Description'}
             </label>
             <input
@@ -188,39 +242,74 @@ function AddContent() {
               value={sender}
               onChange={(e) => setSender(e.target.value)}
               placeholder={direction === 'income' ? 'Who sent this?' : 'What was this for?'}
-              className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-800 text-sm font-medium placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-800/10 focus:border-zinc-400 transition-all"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-medium placeholder:opacity-20 focus:outline-none transition-all duration-200"
+              style={inputStyle}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'rgba(201,168,76,0.4)';
+                e.target.style.boxShadow = '0 0 0 3px rgba(201,168,76,0.07)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(255,255,255,0.07)';
+                e.target.style.boxShadow = 'none';
+              }}
             />
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
-              Notes (optional)
+            <label className="block text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
+              Notes <span className="normal-case font-normal opacity-50">(optional)</span>
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               placeholder="Any additional notes"
-              className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-800 text-sm font-medium placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-800/10 focus:border-zinc-400 transition-all resize-none"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm font-medium placeholder:opacity-20 focus:outline-none transition-all duration-200 resize-none"
+              style={inputStyle}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'rgba(201,168,76,0.4)';
+                e.target.style.boxShadow = '0 0 0 3px rgba(201,168,76,0.07)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(255,255,255,0.07)';
+                e.target.style.boxShadow = 'none';
+              }}
             />
           </div>
 
-          {/* Submit */}
+          {/* Success */}
           {success && (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold px-4 py-2.5 rounded-lg text-center animate-fade-in-up">
+            <div
+              className="text-xs font-semibold px-4 py-3 rounded-2xl text-center animate-fade-in-up"
+              style={{
+                background: 'rgba(16,185,129,0.1)',
+                border: '1px solid rgba(16,185,129,0.25)',
+                color: '#34d399',
+              }}
+            >
               ✓ Transaction added successfully
             </div>
           )}
 
+          {/* Submit */}
           <button
             type="submit"
             disabled={submitting || !amount}
-            className="w-full py-3.5 rounded-xl bg-zinc-800 text-white text-sm font-semibold hover:bg-zinc-700 active:scale-[0.98] transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-zinc-800/20"
+            className="w-full py-4 rounded-2xl text-sm font-bold tracking-wide transition-all duration-300 active:scale-[0.97] disabled:opacity-30"
+            style={{
+              background: amount && !submitting
+                ? 'linear-gradient(135deg, #c9a84c, #e8c96a, #c9a84c)'
+                : 'rgba(201,168,76,0.2)',
+              color: amount && !submitting ? '#0a0a0f' : 'rgba(201,168,76,0.5)',
+              boxShadow: amount && !submitting
+                ? '0 8px 28px rgba(201,168,76,0.3)'
+                : 'none',
+            }}
           >
             {submitting ? (
               <span className="flex items-center justify-center gap-2">
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span className="w-4 h-4 border-2 border-black/20 border-t-black/60 rounded-full animate-spin" />
                 Adding…
               </span>
             ) : (
