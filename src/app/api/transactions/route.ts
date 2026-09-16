@@ -85,16 +85,41 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. Parse the body
-  let body: WebhookPayload;
+  let body: WebhookPayload & { rawSms?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { amount, direction, rawSender = '', notes = '', timestamp } = body;
+  let { amount, direction, rawSender = '', notes = '', timestamp } = body;
 
-  if (typeof amount !== 'number' || amount <= 0) {
+  // 2.5 Optional: Auto-parse from raw SMS if provided
+  if (body.rawSms) {
+    const sms = body.rawSms;
+    notes = sms; // Save the raw SMS in notes for reference
+
+    // Try expense format
+    const expenseMatch = sms.match(/Sent Rs\.?([0-9,.]+)/i);
+    // Try income format
+    const incomeMatch = sms.match(/Credit Alert!.*?Rs\.?([0-9,.]+)/is) || sms.match(/Rs\.?([0-9,.]+).*credited/is);
+
+    if (expenseMatch) {
+      amount = parseFloat(expenseMatch[1].replace(/,/g, ''));
+      direction = 'debit';
+      const merchantMatch = sms.match(/To (.*?)\n/i);
+      rawSender = merchantMatch ? merchantMatch[1].trim() : 'Unknown Merchant';
+    } else if (incomeMatch) {
+      amount = parseFloat(incomeMatch[1].replace(/,/g, ''));
+      direction = 'credit';
+      const senderMatch = sms.match(/from VPA\n(.*?) \(/i) || sms.match(/from (.*?) \(/i);
+      rawSender = senderMatch ? senderMatch[1].trim() : 'Unknown Sender';
+    } else {
+      return NextResponse.json({ error: 'Could not parse SMS format on server' }, { status: 400 });
+    }
+  }
+
+  if (typeof amount !== 'number' || amount <= 0 || isNaN(amount)) {
     return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
   }
   if (direction !== 'credit' && direction !== 'debit') {
