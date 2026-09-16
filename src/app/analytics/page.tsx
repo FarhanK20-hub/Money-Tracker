@@ -115,6 +115,7 @@ function AnalyticsContent() {
         bizIncome: txs.filter(t => t.category === 'business_income').reduce((s, t) => s + t.amount, 0),
         bizExpenses: txs.filter(t => t.category === 'business_expense').reduce((s, t) => s + t.amount, 0),
         persIncome: txs.filter(t => t.category === 'personal_income').reduce((s, t) => s + t.amount, 0),
+        persExpenses: txs.filter(t => t.category === 'personal_expense').reduce((s, t) => s + t.amount, 0),
       };
     });
 
@@ -137,6 +138,14 @@ function AnalyticsContent() {
     const netSavings = totalIncome - totalExpenses;
     const savingsRate = totalIncome > 0 ? Math.min((netSavings / totalIncome) * 100, 100) : 0;
 
+    // Separate savings metrics
+    const bizNetSavings = data.businessIncome - data.businessExpenses;
+    const bizSavingsRate = data.businessIncome > 0 ? Math.min((bizNetSavings / data.businessIncome) * 100, 100) : 0;
+    const persNetSavings = data.personalIncome - data.personalExpenses;
+    const persSavingsRate = data.personalIncome > 0 ? Math.min((persNetSavings / data.personalIncome) * 100, 100) : 0;
+
+    const thisMonthPersExp = months[5].persExpenses;
+
     const totalWealth = data.availableBalance + data.personalBalance + data.totalFDPrincipal;
     const fdPct = totalWealth > 0 ? (data.totalFDPrincipal / totalWealth) * 100 : 0;
     const bizPct = totalWealth > 0 ? (Math.max(0, data.availableBalance) / totalWealth) * 100 : 0;
@@ -149,7 +158,7 @@ function AnalyticsContent() {
       ? Math.ceil((new Date(nextFD.maturityDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
       : null;
 
-    return { months, thisMonth, bizGrowth, activeFDs, totalFDMaturity, totalFDInterest, totalIncome, totalExpenses, netSavings, savingsRate, totalWealth, fdPct, bizPct, persPct, nextFD, daysToNextFD };
+    return { months, thisMonth, bizGrowth, activeFDs, totalFDMaturity, totalFDInterest, totalIncome, totalExpenses, netSavings, savingsRate, bizNetSavings, bizSavingsRate, persNetSavings, persSavingsRate, thisMonthPersExp, totalWealth, fdPct, bizPct, persPct, nextFD, daysToNextFD };
   }, [transactions, fds, data]);
 
   if (!data || !analytics) {
@@ -160,9 +169,13 @@ function AnalyticsContent() {
     );
   }
 
-  const { months, thisMonth, bizGrowth, activeFDs, totalFDMaturity, totalFDInterest, totalIncome, totalExpenses, netSavings, savingsRate, totalWealth, fdPct, bizPct, persPct, nextFD, daysToNextFD } = analytics;
+  const { months, thisMonth, bizGrowth, activeFDs, totalFDMaturity, totalFDInterest, totalIncome, totalExpenses, netSavings, savingsRate, bizNetSavings, bizSavingsRate, persNetSavings, persSavingsRate, thisMonthPersExp, totalWealth, fdPct, bizPct, persPct, nextFD, daysToNextFD } = analytics;
   const savingsColor = savingsRate >= 50 ? '#10b981' : savingsRate >= 20 ? '#f59e0b' : '#ef4444';
   const savingsLabel = savingsRate >= 50 ? 'Excellent' : savingsRate >= 20 ? 'Moderate' : 'Low';
+  const bizSavingsColor = bizSavingsRate >= 50 ? '#10b981' : bizSavingsRate >= 20 ? '#f59e0b' : '#ef4444';
+  const bizSavingsLabel = bizSavingsRate >= 50 ? 'Excellent' : bizSavingsRate >= 20 ? 'Moderate' : 'Low';
+  const persSavingsColor = persSavingsRate >= 50 ? '#10b981' : persSavingsRate >= 20 ? '#f59e0b' : '#ef4444';
+  const persSavingsLabel = persSavingsRate >= 50 ? 'Excellent' : persSavingsRate >= 20 ? 'Moderate' : 'Low';
 
   return (
     <div className="min-h-screen pb-32" style={{ background: '#0a0a0f' }}>
@@ -211,24 +224,45 @@ function AnalyticsContent() {
           </div>
         </GlassCard>
 
-        {/* ── Savings Rate ────────────────────────────── */}
-        <SectionLabel>Savings & Efficiency</SectionLabel>
+        {/* ── Business Savings & Efficiency ──────────── */}
+        <SectionLabel>Business Savings &amp; Efficiency</SectionLabel>
         <div className="grid grid-cols-2 gap-3">
           <GlassCard className="flex flex-col items-center justify-center py-5 px-3">
             <div className="relative flex items-center justify-center mb-3">
-              <DonutRing pct={savingsRate} color={savingsColor} />
+              <DonutRing pct={bizSavingsRate} color={bizSavingsColor} />
               <div className="absolute text-center">
-                <p className="text-xl font-bold text-zinc-100 leading-none">{savingsRate.toFixed(0)}%</p>
+                <p className="text-xl font-bold text-zinc-100 leading-none">{bizSavingsRate.toFixed(0)}%</p>
               </div>
             </div>
             <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold">Savings Rate</p>
-            <Pill label={savingsLabel} color={savingsColor} />
+            <Pill label={bizSavingsLabel} color={bizSavingsColor} />
           </GlassCard>
 
           <GlassCard className="p-4">
-            <StatRow label="Income" value={formatCurrency(totalIncome)} valueColor="#f5f5f5" />
-            <StatRow label="Expenses" value={formatCurrency(totalExpenses)} valueColor="#f87171" />
-            <StatRow label="Saved" value={formatCurrency(netSavings)} valueColor={netSavings >= 0 ? '#34d399' : '#f87171'} />
+            <StatRow label="Income" value={formatCurrency(data.businessIncome)} valueColor="#fbbf24" />
+            <StatRow label="Expenses" value={formatCurrency(data.businessExpenses)} valueColor="#f87171" />
+            <StatRow label="Saved" value={formatCurrency(bizNetSavings)} valueColor={bizNetSavings >= 0 ? '#34d399' : '#f87171'} />
+          </GlassCard>
+        </div>
+
+        {/* ── Personal Savings & Efficiency ──────────── */}
+        <SectionLabel>Personal Savings &amp; Efficiency</SectionLabel>
+        <div className="grid grid-cols-2 gap-3">
+          <GlassCard className="flex flex-col items-center justify-center py-5 px-3">
+            <div className="relative flex items-center justify-center mb-3">
+              <DonutRing pct={persSavingsRate} color={persSavingsColor} />
+              <div className="absolute text-center">
+                <p className="text-xl font-bold text-zinc-100 leading-none">{persSavingsRate.toFixed(0)}%</p>
+              </div>
+            </div>
+            <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold">Savings Rate</p>
+            <Pill label={persSavingsLabel} color={persSavingsColor} />
+          </GlassCard>
+
+          <GlassCard className="p-4">
+            <StatRow label="Income" value={formatCurrency(data.personalIncome)} valueColor="#2dd4bf" />
+            <StatRow label="Expenses" value={formatCurrency(data.personalExpenses)} valueColor="#f87171" />
+            <StatRow label="Saved" value={formatCurrency(persNetSavings)} valueColor={persNetSavings >= 0 ? '#34d399' : '#f87171'} />
           </GlassCard>
         </div>
 
@@ -254,6 +288,32 @@ function AnalyticsContent() {
                   {bizGrowth >= 0 ? '↑' : '↓'} {Math.abs(bizGrowth).toFixed(1)}% MoM
                 </div>
               )}
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* ── Personal Expenses Trend ─────────────────── */}
+        <SectionLabel>Personal Expenses — Last 6 Months</SectionLabel>
+        <GlassCard gradient="linear-gradient(135deg, rgba(0,20,30,0.98), rgba(18,18,20,0.98))">
+          <div className="p-4">
+            <BarChart data={months.map(m => ({ label: m.label, value: m.persExpenses }))} color="#2dd4bf" />
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/[0.06]">
+              <div>
+                <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-0.5">This Month</p>
+                <p className="text-xl font-bold tabular-nums flex items-center" style={{ color: '#2dd4bf' }}>
+                  <AnimatedNumber value={thisMonthPersExp} />
+                </p>
+              </div>
+              <div className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1"
+                style={{
+                  background: thisMonthPersExp <= (months[4].persExpenses || thisMonthPersExp) ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)',
+                  color: thisMonthPersExp <= (months[4].persExpenses || thisMonthPersExp) ? '#34d399' : '#f87171',
+                  border: `1px solid ${thisMonthPersExp <= (months[4].persExpenses || thisMonthPersExp) ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)'}`,
+                }}>
+                {months[4].persExpenses > 0
+                  ? `${thisMonthPersExp <= months[4].persExpenses ? '↓' : '↑'} ${Math.abs(((thisMonthPersExp - months[4].persExpenses) / months[4].persExpenses) * 100).toFixed(1)}% MoM`
+                  : 'No prev. data'}
+              </div>
             </div>
           </div>
         </GlassCard>
