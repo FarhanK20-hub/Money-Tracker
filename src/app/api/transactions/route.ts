@@ -77,10 +77,17 @@ async function appendToGist(entry: Record<string, unknown>) {
 export async function POST(req: NextRequest) {
   // 1. Validate the bearer token
   const authHeader = req.headers.get('authorization') || '';
-  const token = authHeader.replace('Bearer ', '').trim();
+  const headerToken = authHeader.replace('Bearer ', '').trim();
+  const url = new URL(req.url);
+  const queryToken = url.searchParams.get('apiKey') || url.searchParams.get('token');
+  const token = headerToken || queryToken;
   const expected = process.env.API_SECRET_KEY;
 
-  if (!expected || token !== expected) {
+  if (!expected) {
+    return NextResponse.json({ error: 'Server misconfiguration: API_SECRET_KEY not set in environment variables' }, { status: 500 });
+  }
+
+  if (token !== expected) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
